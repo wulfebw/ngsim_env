@@ -45,13 +45,13 @@ function test_render()
     filepath = Pkg.dir("NGSIM", "data", "trajdata_debug_reduced.txt")
     params = Dict{Any,Any}("trajectory_filepaths"=>[filepath])
     params["primesteps"] = 0
-    params["H"] = 500
+    params["H"] = 100
     env = NGSIMEnv(params)
 
     x = reset(env)
     imgs = []
     for _ in 1:100
-        a = [1.,-.05]
+        a = [1.,0.]
         img = render(env)
         x, r, terminal, _ = step(env, a)
         if terminal

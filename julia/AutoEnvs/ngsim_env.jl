@@ -47,10 +47,6 @@ type NGSIMEnv <: Env
             render_params::Dict = Dict("zoom"=>5., "viz_dir"=>"/tmp"))
         param_keys = keys(params)
         @assert in("trajectory_filepaths", param_keys)
-        trajdatas, trajinfos = load_ngsim_trajdatas(
-            params["trajectory_filepaths"],
-            minlength=primesteps + H
-        )
 
         # optionally overwrite defaults
         reclength = get(params, "reclength", reclength)
@@ -59,6 +55,12 @@ type NGSIMEnv <: Env
         render_params = get(params, "render_params", render_params)
         terminate_on_collision = get(params, "terminate_on_collision", terminate_on_collision)
         terminate_on_off_road = get(params, "terminate_on_off_road", terminate_on_off_road)
+
+        # load trajdatas
+        trajdatas, trajinfos = load_ngsim_trajdatas(
+            params["trajectory_filepaths"],
+            minlength=primesteps + H
+        )
 
         # build components
         scene_length = max_n_objects(trajdatas)
@@ -86,7 +88,9 @@ function reset(env::NGSIMEnv)
     env.epid += 1
     empty!(env.rec)
     empty!(env.scene)
-    env.traj_idx, env.egoid, env.t, env.h = sample_trajdata_vehicle(env.trajinfos)
+    env.traj_idx, env.egoid, env.t, env.h = sample_trajdata_vehicle(
+        env.trajinfos, env.H + env.primesteps
+    )
     # prime 
     for t in env.t:(env.t + env.primesteps)
         update!(env.rec, get!(env.scene, env.trajdatas[env.traj_idx], t))

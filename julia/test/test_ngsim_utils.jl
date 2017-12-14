@@ -16,7 +16,7 @@ function test_sample_trajdata_vehicle()
     traj_idx, vehid, ts, te = sample_trajdata_vehicle(trajinfos)
     @test traj_idx == 1
     @test vehid == 1
-    @test ts == 1
+    @test ts >= 1
     @test te == 2
 end
 
