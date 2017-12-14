@@ -3,7 +3,8 @@ export
     load_ngsim_trajdatas,
     sample_trajdata_vehicle,
     build_feature_extractor,
-    max_n_objects
+    max_n_objects,
+    fill_infos_cache
 
 #=
 Description:
@@ -166,4 +167,24 @@ function max_n_objects(trajdatas)
         cur_max = max(cur, cur_max)
     end
     return cur_max
+end
+
+function fill_infos_cache(ext::MultiFeatureExtractor)
+    cache = Dict()
+    cache["feature_names"] = feature_names(ext)
+    for (i,n) in enumerate(cache["feature_names"])
+        if "is_colliding" == n
+            cache["is_colliding_idx"] = i
+        end
+        if "out_of_lane" == n 
+            cache["out_of_lane_idx"] = i
+        end
+        if "markerdist_left" == n
+            cache["markerdist_left_idx"] = i
+        end
+        if "markerdist_right" == n
+            cache["markerdist_right_idx"] = i
+        end
+    end
+    return cache
 end

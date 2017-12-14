@@ -37,20 +37,26 @@ function test_basics()
     # test infos 
     reset(env)
     _, _, _, infos = step(env, [1.,1.])
-    println(infos)
+    @test infos["rmse"] != 0.
 end
 
 function test_render()
+    srand(0)
     filepath = Pkg.dir("NGSIM", "data", "trajdata_debug_reduced.txt")
-    params = Dict("trajectory_filepaths"=>[filepath])
+    params = Dict{Any,Any}("trajectory_filepaths"=>[filepath])
+    params["primesteps"] = 0
+    params["H"] = 500
     env = NGSIMEnv(params)
 
     x = reset(env)
     imgs = []
     for _ in 1:100
-        a = [1.,1.]
+        a = [1.,-.05]
         img = render(env)
-        nx, r, terminal, _ = step(env, a)
+        x, r, terminal, _ = step(env, a)
+        if terminal
+            break
+        end
     end
 end
 

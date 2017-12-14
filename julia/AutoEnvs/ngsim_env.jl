@@ -28,15 +28,22 @@ type NGSIMEnv <: Env
     primesteps::Int # timesteps to prime the scene
     Δt::Float64
 
+    # settings
+    terminate_on_collision::Bool
+    terminate_on_off_road::Bool
+
     # metadata
     epid::Int # episode id
     render_params::Dict # rendering options
+    infos_cache::Dict # cache for infos intermediate results
     function NGSIMEnv(
             params::Dict; 
             reclength::Int = 10,
             Δt::Float64 = .1,
             primesteps::Int = 50,
             H::Int = 50,
+            terminate_on_collision::Bool = true,
+            terminate_on_off_road::Bool = true,
             render_params::Dict = Dict("zoom"=>5., "viz_dir"=>"/tmp"))
         param_keys = keys(params)
         @assert in("trajectory_filepaths", param_keys)
@@ -44,6 +51,16 @@ type NGSIMEnv <: Env
             params["trajectory_filepaths"],
             minlength=primesteps + H
         )
+
+        # optionally overwrite defaults
+        reclength = get(params, "reclength", reclength)
+        primesteps = get(params, "primesteps", primesteps)
+        H = get(params, "H", H)
+        render_params = get(params, "render_params", render_params)
+        terminate_on_collision = get(params, "terminate_on_collision", terminate_on_collision)
+        terminate_on_off_road = get(params, "terminate_on_off_road", terminate_on_off_road)
+
+        # build components
         scene_length = max_n_objects(trajdatas)
         scene = Scene(scene_length)
         rec = SceneRecord(reclength, Δt, scene_length)
@@ -51,6 +68,7 @@ type NGSIMEnv <: Env
         if in("render_params", param_keys)
             render_params = params["render_params"]
         end
+        infos_cache = fill_infos_cache(ext)
         return new(
             trajdatas, 
             trajinfos, 
@@ -59,7 +77,8 @@ type NGSIMEnv <: Env
             rec, 
             ext, 
             0, nothing, 0, 0, 0, H, primesteps, Δt,
-            0, render_params
+            terminate_on_collision, terminate_on_off_road,
+            0, render_params, infos_cache
         )
     end
 end
@@ -106,17 +125,48 @@ function _step!(env::NGSIMEnv, action::Array{Float64})
 
     # load the actual scene, and insert the vehicle into it
     get!(env.scene, env.trajdatas[env.traj_idx], env.t)
-    env.scene[findfirst(env.scene, env.egoid)] = env.ego_veh
+    vehidx = findfirst(env.scene, env.egoid)
+    orig_veh = env.scene[vehidx] # for infos purposes
+    env.scene[vehidx] = env.ego_veh
 
     # update rec with current scene 
     update!(env.rec, env.scene)
+
+    # compute info about the step
+    step_infos = Dict()
+    step_infos["rmse"] = sqrt(abs2((orig_veh.state.posG - env.ego_veh.state.posG)))
+    return step_infos
 end
 function Base.step(env::NGSIMEnv, action::Array{Float64})
-    _step!(env, action)
+    step_infos = _step!(env, action)
+    # compute features and feature_infos 
+    features = get_features(env)
+    feature_infos = _compute_feature_infos(env, features)
+    # combine infos 
+    infos = merge(step_infos, feature_infos)
     # update env timestep to be the next scene to load
     env.t += 1
-    terminal = env.t >= env.h ? true : false
-    return get_features(env), 0, terminal, Dict()
+    # compute terminal
+    if env.t >= env.h
+        terminal = true
+    elseif env.terminate_on_collision && infos["is_colliding"] == 1
+        terminal = true
+    elseif env.terminate_on_off_road && (abs(infos["markerdist_left"]) > 3 && abs(infos["markerdist_right"]) > 3)
+        terminal = true
+    else
+        terminal = false
+    end
+    return get_features(env), 0, terminal, infos
+end
+function _compute_feature_infos(env::NGSIMEnv, features::Array{Float64})
+    is_colliding = features[env.infos_cache["is_colliding_idx"]]
+    markerdist_left = features[env.infos_cache["markerdist_left_idx"]]
+    markerdist_right = features[env.infos_cache["markerdist_right_idx"]]
+    return Dict(
+        "is_colliding"=>is_colliding, 
+        "markerdist_left"=>markerdist_left,
+        "markerdist_right"=>markerdist_right
+    )
 end
 function AutoRisk.get_features(env::NGSIMEnv)
     veh_idx = findfirst(env.scene, env.egoid)
