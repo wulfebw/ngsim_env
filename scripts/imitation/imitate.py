@@ -2,7 +2,6 @@
 import numpy as np
 import os
 import tensorflow as tf
-import time
 
 from rllab.baselines.linear_feature_baseline import LinearFeatureBaseline
 from rllab.envs.gym_env import GymEnv
@@ -21,6 +20,7 @@ from hgail.recognition.recognition_model import RecognitionModel
 from hgail.policies.scheduling import ConstantIntervalScheduler
 import hgail.misc.utils
 
+import auto_validator
 import utils
 
 # setup
@@ -34,7 +34,7 @@ use_infogail = False
 use_critic_replay_memory = True
 latent_dim = 2
 real_data_maxsize = None
-batch_size = 8000
+batch_size = 200
 n_critic_train_epochs = 50
 n_recognition_train_epochs = 30
 scheduler_k = 20
@@ -66,12 +66,8 @@ critic_dataset = CriticDataset(
 )
 
 # load env
-st = time.time()
 filename = 'trajdata_debug_reduced.txt'
 env = TfEnv(normalize(utils.build_ngsim_env(filename), normalize_obs=True))
-print(time.time() - st)
-input()
-
 
 # session for actual training
 with tf.Session() as session:
@@ -159,6 +155,9 @@ with tf.Session() as session:
     if initial_filepath:
         saver.restore(session, initial_filepath)
 
+    # validator
+    validator = auto_validator.AutoValidator(summary_writer)
+
     algo = GAIL(
         critic=critic,
         recognition=recognition_model,
@@ -166,6 +165,7 @@ with tf.Session() as session:
         env=env,
         policy=policy,
         baseline=baseline,
+        validator=validator,
         batch_size=batch_size,
         max_path_length=max_path_length,
         n_itr=n_itr,
