@@ -1,13 +1,12 @@
 
-import gym
 import julia
 import os
 
+from rllab.envs.base import Env
+
 from julia_env.utils import build_space
 
-class JuliaEnv(gym.Env):
-
-    metadata = {'render.modes': ['human']}
+class JuliaEnv(Env):
 
     def __init__(self, env_id, env_params, using):
 
@@ -18,17 +17,25 @@ class JuliaEnv(gym.Env):
 
         # initialize environment
         self.env = self.j.make(env_id, env_params)
-        self.observation_space = build_space(*self.j.observation_space_spec(self.env))
-        self.action_space = build_space(*self.j.action_space_spec(self.env))
+        self._observation_space = build_space(*self.j.observation_space_spec(self.env))
+        self._action_space = build_space(*self.j.action_space_spec(self.env))
 
-    def _reset(self):
+    def reset(self):
         return self.j.reset(self.env)
 
-    def _step(self, action):
+    def step(self, action):
         return self.j.step(self.env, action)
 
-    def _render(self, mode='human', close=False):
+    def render(self):
         return self.j.render(self.env)
         
     def obs_names(self):
         return self.j.obs_names(self.env)
+
+    @property
+    def observation_space(self):
+        return self._observation_space
+
+    @property
+    def action_space(self):
+        return self._action_space

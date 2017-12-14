@@ -1,7 +1,6 @@
 
-import gym
-from gym import spaces
 import numpy as np
+import rllab.spaces
 
 def build_space(shape, space_type, info={}):
     if space_type == 'Box':
@@ -11,11 +10,11 @@ def build_space(shape, space_type, info={}):
             msg = 'shape = {}\tlow.shape = {}\thigh.shape={}'.format(
                 shape, low.shape, high.shape)
             assert shape == np.shape(low) and shape == np.shape(high), msg
-            return spaces.Box(low=low, high=high)
+            return rllab.spaces.Box(low=low, high=high)
         else:
-            return spaces.Box(low=-np.inf, high=np.inf, shape=shape)        
+            return rllab.spaces.Box(low=-np.inf, high=np.inf, shape=shape)        
     elif space_type == 'Discrete':
         assert len(shape) == 1, 'invalid shape for Discrete space'
-        return spaces.Discrete(shape)
+        return rllab.spaces.Discrete(shape)
     else:
         raise(ValueError('space type not implemented: {}'.format(space_type)))

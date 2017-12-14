@@ -24,6 +24,7 @@ type NGSIMEnv <: Env
     traj_idx::Int # current index into trajdatas 
     t::Int # current timestep in the trajdata
     h::Int # current maximum horizon for egoid
+    H::Int # maximum horizon
     primesteps::Int # timesteps to prime the scene
     Δt::Float64
 
@@ -35,10 +36,14 @@ type NGSIMEnv <: Env
             reclength::Int = 10,
             Δt::Float64 = .1,
             primesteps::Int = 50,
+            H::Int = 50,
             render_params::Dict = Dict("zoom"=>5., "viz_dir"=>"/tmp"))
         param_keys = keys(params)
         @assert in("trajectory_filepaths", param_keys)
-        trajdatas, trajinfos = load_ngsim_trajdatas(params["trajectory_filepaths"])
+        trajdatas, trajinfos = load_ngsim_trajdatas(
+            params["trajectory_filepaths"],
+            minlength=primesteps + H
+        )
         scene_length = max_n_objects(trajdatas)
         scene = Scene(scene_length)
         rec = SceneRecord(reclength, Δt, scene_length)
@@ -53,7 +58,7 @@ type NGSIMEnv <: Env
             scene, 
             rec, 
             ext, 
-            0, nothing, 0, 0, 0, primesteps, Δt,
+            0, nothing, 0, 0, 0, H, primesteps, Δt,
             0, render_params
         )
     end
@@ -73,6 +78,8 @@ function reset(env::NGSIMEnv)
     env.roadway = get_corresponding_roadway(env.traj_idx)
     # env.t is the next timestep to load
     env.t += env.primesteps + 1
+    # enforce a maximum horizon 
+    env.h = min(env.h, env.t + env.H)
     return get_features(env)
 end 
 
@@ -127,7 +134,7 @@ function observation_space_spec(env::NGSIMEnv)
     infos = Dict("high"=>high, "low"=>low)
     return (length(env.ext),), "Box", infos
 end
-action_space_spec(env::NGSIMEnv) = (2,), "Box", Dict("high"=>[1.,1.], "low"=>[-1.,-1.])
+action_space_spec(env::NGSIMEnv) = (2,), "Box", Dict("high"=>[2.,.05], "low"=>[-2.,-.05])
 obs_names(env::NGSIMEnv) = feature_names(env.ext)
 
 #=

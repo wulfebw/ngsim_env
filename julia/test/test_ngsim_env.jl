@@ -3,7 +3,7 @@ using AutoEnvs
 
 function test_basics()
     # ctor
-    filepath = Pkg.dir("NGSIM", "data", "trajdata_i101_trajectories-0750am-0805am.txt")
+    filepath = Pkg.dir("NGSIM", "data", "trajdata_debug_reduced.txt")
     params = Dict("trajectory_filepaths"=>[filepath])
     env = NGSIMEnv(params)
 
@@ -33,10 +33,15 @@ function test_basics()
     
     @test abs(nx[acc_idx]) <= 1e-1
     @test abs(nx[tur_idx] - 1) <= 1e-1
+
+    # test infos 
+    reset(env)
+    _, _, _, infos = step(env, [1.,1.])
+    println(infos)
 end
 
 function test_render()
-    filepath = Pkg.dir("NGSIM", "data", "trajdata_i101_trajectories-0750am-0805am.txt")
+    filepath = Pkg.dir("NGSIM", "data", "trajdata_debug_reduced.txt")
     params = Dict("trajectory_filepaths"=>[filepath])
     env = NGSIMEnv(params)
 

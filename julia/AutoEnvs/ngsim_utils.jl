@@ -95,7 +95,7 @@ Returns:
             key = id of a vehicle in the trajdata
             value = first and last timestep in trajdata of vehicle
 =#
-function load_ngsim_trajdatas(filepaths)
+function load_ngsim_trajdatas(filepaths; minlength::Int=100)
     # check that indexes exist for the relevant trajdatas
     # if they are missing, create the index
     # the index is just a collection of metadata that is saved with the 
@@ -107,7 +107,7 @@ function load_ngsim_trajdatas(filepaths)
         # if so, load it
         # if not, create and save it
         if !isfile(index_filepath)
-            index = index_ngsim_trajectory(filepaths[i])
+            index = index_ngsim_trajectory(filepaths[i], minlength=minlength)
             JLD.save(index_filepath, "index", index)
         else
             index = JLD.load(index_filepath)["index"]
@@ -154,7 +154,7 @@ function build_feature_extractor(params = Dict())
     push!(subexts, CoreFeatureExtractor())
     push!(subexts, TemporalFeatureExtractor())
     push!(subexts, WellBehavedFeatureExtractor())
-    push!(subexts, CarLidarFeatureExtractor(extract_carlidar_rangerate = true))
+    push!(subexts, CarLidarFeatureExtractor(20, carlidar_max_range = 50.))
     ext = MultiFeatureExtractor(subexts)
     return ext
 end
