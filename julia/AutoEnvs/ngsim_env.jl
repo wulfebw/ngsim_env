@@ -188,7 +188,7 @@ function observation_space_spec(env::NGSIMEnv)
     infos = Dict("high"=>high, "low"=>low)
     return (length(env.ext),), "Box", infos
 end
-action_space_spec(env::NGSIMEnv) = (2,), "Box", Dict("high"=>[2.,.05], "low"=>[-2.,-.05])
+action_space_spec(env::NGSIMEnv) = (2,), "Box", Dict("high"=>[3.,.1], "low"=>[-3.,-.1])
 obs_names(env::NGSIMEnv) = feature_names(env.ext)
 
 #=

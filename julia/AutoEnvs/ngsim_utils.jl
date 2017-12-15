@@ -24,7 +24,7 @@ Returns:
 function index_ngsim_trajectory(
         filepath::String; 
         minlength::Int=100,
-        verbose::Int=0)
+        verbose::Int=1)
     # setup
     index = Dict()
     trajdata = load_trajdata(filepath)
@@ -59,6 +59,11 @@ function index_ngsim_trajectory(
 
         # step forward
         prev = cur
+    end
+
+    # at this point, any ids in cur are in the last frame, so add them in 
+    for id in cur
+        index[id]["te"] = n_frames
     end
 
     # postprocess to remove undesirable trajectories

@@ -1,6 +1,22 @@
 using Base.Test
 using AutoEnvs
 
+function test_simple_ctor()
+    srand(2)
+    filepath = Pkg.dir("NGSIM", "data", "simple.txt")
+    params = Dict(
+        "trajectory_filepaths"=>[filepath],
+        "H"=>40,
+        "primesteps"=>5
+    )
+    env = NGSIMEnv(params)
+    x = reset(env)
+    nx, r, terminal, _ = step(env, [0.,0.])
+    println(terminal)
+    nx, r, terminal, _ = step(env, [0.,0.])
+    println(terminal)
+end
+
 function test_basics()
     # ctor
     filepath = Pkg.dir("NGSIM", "data", "trajdata_debug_reduced.txt")
@@ -41,11 +57,13 @@ function test_basics()
 end
 
 function test_render()
-    srand(0)
-    filepath = Pkg.dir("NGSIM", "data", "trajdata_debug_reduced.txt")
-    params = Dict{Any,Any}("trajectory_filepaths"=>[filepath])
-    params["primesteps"] = 0
-    params["H"] = 100
+    srand(2)
+    filepath = Pkg.dir("NGSIM", "data", "simple.txt")
+    params = Dict(
+        "trajectory_filepaths"=>[filepath],
+        "H"=>40,
+        "primesteps"=>5
+    )
     env = NGSIMEnv(params)
 
     x = reset(env)
@@ -60,6 +78,7 @@ function test_render()
     end
 end
 
-@time test_basics()
+# @time test_simple_ctor()
+# @time test_basics()
 # manually test rendering
-# @time test_render() 
+@time test_render() 
