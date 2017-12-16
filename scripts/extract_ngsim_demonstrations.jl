@@ -103,7 +103,7 @@ end
 function extract_ngsim_features(
         timestep_delta = 1, # timesteps between feature extractions
         record_length = 20, # number of frames for record to track in the past
-        offset = 400, # from ends of the trajectories
+        offset = 500, # from ends of the trajectories
         prime = 10,
         maxframes = nothing) # nothing for no max
 
@@ -111,7 +111,7 @@ function extract_ngsim_features(
     features = Dict{Int, Dict{Int, Array{Float64}}}()
 
     tic()
-    n_traj = 2
+    n_traj = 1
     # extract 
     for traj_idx in 1:n_traj
 
@@ -143,7 +143,7 @@ function extract_simple_features(
         output_filepath,
         timestep_delta = 1, # timesteps between feature extractions
         record_length = 20, # number of frames for record to track in the past
-        offset = 5, # from ends of the trajectories
+        offset = 3, # from ends of the trajectories
         prime = 2,
         maxframes = nothing) # nothing for no max
 
@@ -165,15 +165,14 @@ function extract_simple_features(
         maxframes
     )
     toc()
-
     write_features(features, output_filepath, ext)
 end
 
 
 # NGSIM
-# extract_ngsim_features()
+extract_ngsim_features()
 
 # DEBUG
-trajdata_filepath = "/Users/wulfebw/.julia/v0.5/NGSIM/data/simple.txt"
-output_filepath = "../data/trajectories/simple.h5"
-extract_simple_features(trajdata_filepath, output_filepath)
+# trajdata_filepath = "/Users/wulfebw/.julia/v0.5/NGSIM/data/3_simple.txt"
+# output_filepath = "../data/trajectories/3_simple.h5"
+# extract_simple_features(trajdata_filepath, output_filepath)

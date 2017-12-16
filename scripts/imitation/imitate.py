@@ -34,11 +34,11 @@ use_infogail = False
 use_critic_replay_memory = True
 latent_dim = 2
 real_data_maxsize = None
-batch_size = 200
-n_critic_train_epochs = 50
+batch_size = 8000
+n_critic_train_epochs = 30
 n_recognition_train_epochs = 30
 scheduler_k = 20
-trpo_step_size = 1.
+trpo_step_size = .5
 critic_learning_rate = .0005
 critic_dropout_keep_prob = .8
 recognition_learning_rate = .0001
@@ -51,23 +51,29 @@ else:
 n_itr = start_itr + 1000
 max_path_length = 1000
 
+# load env
+filename = '3_simple.txt'
+env = utils.build_ngsim_env(filename, H=45, primesteps=2)
+# get low and high values for normalizing _real_ actions
+low, high = env.action_space.low, env.action_space.high
+env = TfEnv(normalize(env, normalize_obs=True))
+
 # critic dataset
-expert_data_filepath = '../../data/trajectories/ngsim.h5'
-data = utils.load_data(expert_data_filepath)
+# build action normalizer first to use it on the actions 
+expert_data_filepath = '../../data/trajectories/3_simple.h5'
+data = utils.load_data(expert_data_filepath, act_low=low, act_high=high)
+
 
 if use_critic_replay_memory:
     critic_replay_memory = hgail.misc.utils.KeyValueReplayMemory(maxsize=3 *  batch_size)
 else:
     critic_replay_memory = None
+
 critic_dataset = CriticDataset(
     data, 
     replay_memory=critic_replay_memory,
     batch_size=1000
 )
-
-# load env
-filename = 'trajdata_debug_reduced.txt'
-env = TfEnv(normalize(utils.build_ngsim_env(filename), normalize_obs=True))
 
 # session for actual training
 with tf.Session() as session:
@@ -78,7 +84,7 @@ with tf.Session() as session:
     # build the critic
     critic_network = ObservationActionMLP(
         name='critic', 
-        hidden_layer_dims=[64,64],
+        hidden_layer_dims=[128,64],
         dropout_keep_prob=critic_dropout_keep_prob
     )
     critic = WassersteinCritic(
@@ -132,11 +138,10 @@ with tf.Session() as session:
         policy = GaussianMLPPolicy(
             name="policy",
             env_spec=env.spec,
-            hidden_sizes=(32,32),
-            adaptive_std=False,
+            hidden_sizes=(64,64),
+            adaptive_std=True,
             output_nonlinearity=tf.nn.tanh,
-            init_std=[.1,.005],
-            learn_std=False
+            learn_std=True
         )
         recognition_model = None
 

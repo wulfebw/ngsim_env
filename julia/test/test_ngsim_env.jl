@@ -12,9 +12,7 @@ function test_simple_ctor()
     env = NGSIMEnv(params)
     x = reset(env)
     nx, r, terminal, _ = step(env, [0.,0.])
-    println(terminal)
     nx, r, terminal, _ = step(env, [0.,0.])
-    println(terminal)
 end
 
 function test_basics()
@@ -58,7 +56,7 @@ end
 
 function test_render()
     srand(2)
-    filepath = Pkg.dir("NGSIM", "data", "simple.txt")
+    filepath = Pkg.dir("NGSIM", "data", "trajdata_debug_reduced.txt")
     params = Dict(
         "trajectory_filepaths"=>[filepath],
         "H"=>40,
@@ -78,7 +76,7 @@ function test_render()
     end
 end
 
-# @time test_simple_ctor()
-# @time test_basics()
+@time test_simple_ctor()
+@time test_basics()
 # manually test rendering
-@time test_render() 
+# @time test_render() 

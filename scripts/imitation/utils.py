@@ -7,12 +7,20 @@ import rllab.misc.logger as logger
 
 from julia_env.julia_env import JuliaEnv
 
-def build_ngsim_env(filename='trajdata_i101_trajectories-0750am-0805am.txt'):
+def build_ngsim_env(
+        filename='trajdata_i101_trajectories-0750am-0805am.txt',
+        H=50,
+        primesteps=50):
     basedir = os.path.expanduser('~/.julia/v0.5/NGSIM/data')
     filepaths = [os.path.join(basedir, filename)]
+    env_params = dict(
+        trajectory_filepaths=filepaths,
+        H=H,
+        primesteps=primesteps
+    )
     env = JuliaEnv(
             env_id='NGSIMEnv',
-            env_params=dict(trajectory_filepaths=filepaths),
+            env_params=env_params,
             using='AutoEnvs'
         )
     return env
@@ -62,15 +70,13 @@ def normalize(x):
     x = x / std
     return x, mean, std
 
-def normalize_range(x, orig_lb, orig_ub, lb, ub):
-    orig_lb = np.array(orig_lb)
-    orig_ub = np.array(orig_ub)
-    lb = np.array(lb)
-    ub = np.array(ub)
-
-    scale = (ub - lb) / (orig_ub - orig_lb)
-    x = lb + (x * scale + 1.) * 0.5 * (ub - lb)
-    x = np.clip(x, lb, ub)
+def normalize_range(x, low, high):
+    low = np.array(low)
+    high = np.array(high)
+    mean = (high + low) / 2.
+    half_range = (high - low) / 2.
+    x = (x - mean) / half_range
+    x = np.clip(x, -1, 1)
     return x
 
 def load_x_feature_names(filepath):
@@ -89,11 +95,13 @@ def load_data(
         debug_size=None,
         min_length=40,
         normalize_data=True,
-        shuffle=False):
+        shuffle=False,
+        act_low=-1,
+        act_high=1):
     
     # loading varies based on dataset type
     x, feature_names = load_x_feature_names(filepath)
-    
+
     # optionally keep it to a reasonable size
     if debug_size is not None:
         x = x[:debug_size]
@@ -121,31 +129,12 @@ def load_data(
 
     # normalize it all, _no_ test / val split
     obs, obs_mean, obs_std = normalize(obs)
-    # hardcoded values emulate the ngsim_env
-    # should pass these in from the enviornment
-    act = normalize_range(
-        act, 
-        orig_lb=[-2,-.05], 
-        orig_ub=[2,.05],
-        lb=[-1,-1],
-        ub=[1,1]
-    )
-    
+    # normalize actions to between -1 and 1
+    act = normalize_range(act, act_low, act_high)
+
     return dict(
         observations=obs,
         actions=act,
         obs_mean=obs_mean,
-        obs_std=obs_std
+        obs_std=obs_std,
     )
-
-if __name__ == '__main__':
-    orig_lb = [-1,-.05]
-    orig_ub = [1,.05]
-    lb = [-1,-1]
-    ub = [1,1]
-    x = [
-        [0,0],
-        [-1,-.05],
-        [1,.05]
-    ]
-    print(normalize_range(x, orig_lb, orig_ub, lb, ub))
