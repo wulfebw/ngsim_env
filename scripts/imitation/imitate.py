@@ -52,15 +52,15 @@ n_itr = start_itr + 1000
 max_path_length = 1000
 
 # load env
-filename = '3_simple.txt'
-env = utils.build_ngsim_env(filename, H=45, primesteps=2)
+filename = 'trajdata_i101_trajectories-0750am-0805am.txt'
+env = utils.build_ngsim_env(filename, H=100, primesteps=2)
 # get low and high values for normalizing _real_ actions
 low, high = env.action_space.low, env.action_space.high
 env = TfEnv(normalize(env, normalize_obs=True))
 
 # critic dataset
 # build action normalizer first to use it on the actions 
-expert_data_filepath = '../../data/trajectories/3_simple.h5'
+expert_data_filepath = '../../data/trajectories/ngsim.h5'
 data = utils.load_data(expert_data_filepath, act_low=low, act_high=high)
 
 
@@ -84,7 +84,7 @@ with tf.Session() as session:
     # build the critic
     critic_network = ObservationActionMLP(
         name='critic', 
-        hidden_layer_dims=[128,64],
+        hidden_layer_dims=[128,128,64],
         dropout_keep_prob=critic_dropout_keep_prob
     )
     critic = WassersteinCritic(
@@ -138,7 +138,7 @@ with tf.Session() as session:
         policy = GaussianMLPPolicy(
             name="policy",
             env_spec=env.spec,
-            hidden_sizes=(64,64),
+            hidden_sizes=(128,128),
             adaptive_std=True,
             output_nonlinearity=None,
             learn_std=True
