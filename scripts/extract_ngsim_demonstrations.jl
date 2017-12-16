@@ -102,7 +102,7 @@ end
 
 function extract_ngsim_features(
         timestep_delta = 1, # timesteps between feature extractions
-        record_length = 20, # number of frames for record to track in the past
+        record_length = 10, # number of frames for record to track in the past
         offset = 500, # from ends of the trajectories
         prime = 10,
         maxframes = nothing) # nothing for no max

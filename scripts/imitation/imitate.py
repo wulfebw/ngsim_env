@@ -140,7 +140,7 @@ with tf.Session() as session:
             env_spec=env.spec,
             hidden_sizes=(64,64),
             adaptive_std=True,
-            output_nonlinearity=tf.nn.tanh,
+            output_nonlinearity=None,
             learn_std=True
         )
         recognition_model = None
