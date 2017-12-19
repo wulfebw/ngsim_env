@@ -8,7 +8,7 @@ export
     obs_names,
     reward_names
 
-abstract Env
+abstract type Env end
 Base.step(env::Env, action::Int) = error("Not implemented")
 Base.step(env::Env, action::Float64) = error("Not implemented")
 Base.step(env::Env, action::Array{Float64}) = error("Not implemented")
