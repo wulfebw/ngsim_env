@@ -3,7 +3,7 @@ using AutoEnvs
 
 function test_simple_ctor()
     srand(2)
-    filepath = Pkg.dir("NGSIM", "data", "simple.txt")
+    filepath = Pkg.dir("NGSIM", "data", "1_simple.txt")
     params = Dict(
         "trajectory_filepaths"=>[filepath],
         "H"=>40,
@@ -56,7 +56,7 @@ end
 
 function test_render()
     srand(2)
-    filepath = Pkg.dir("NGSIM", "data", "trajdata_debug_reduced.txt")
+    filepath = Pkg.dir("NGSIM", "data", "2_simple.txt")
     params = Dict(
         "trajectory_filepaths"=>[filepath],
         "H"=>40,
