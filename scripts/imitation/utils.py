@@ -10,13 +10,15 @@ from julia_env.julia_env import JuliaEnv
 def build_ngsim_env(
         filename='trajdata_i101_trajectories-0750am-0805am.txt',
         H=50,
-        primesteps=50):
+        primesteps=50,
+        terminate_on_collision=True):
     basedir = os.path.expanduser('~/.julia/v0.6/NGSIM/data')
     filepaths = [os.path.join(basedir, filename)]
     env_params = dict(
         trajectory_filepaths=filepaths,
         H=H,
-        primesteps=primesteps
+        primesteps=primesteps,
+        terminate_on_collision=terminate_on_collision
     )
     env = JuliaEnv(
             env_id='NGSIMEnv',

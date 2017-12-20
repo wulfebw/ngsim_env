@@ -8,9 +8,9 @@ function build_feature_extractor()
         CoreFeatureExtractor(),
         TemporalFeatureExtractor(),
         WellBehavedFeatureExtractor(),
-        CarLidarFeatureExtractor(20, carlidar_max_range = 50.)
+        CarLidarFeatureExtractor(20, carlidar_max_range = 50.),
+        ForeForeFeatureExtractor()
     ]
-
     ext = MultiFeatureExtractor(subexts)
     return ext
 end
@@ -170,9 +170,9 @@ end
 
 
 # NGSIM
-# extract_ngsim_features()
+extract_ngsim_features()
 
 # DEBUG
-trajdata_filepath = "/Users/wulfebw/.julia/v0.5/NGSIM/data/2_simple.txt"
-output_filepath = "../data/trajectories/2_simple.h5"
-extract_simple_features(trajdata_filepath, output_filepath)
+# trajdata_filepath = "/Users/wulfebw/.julia/v0.5/NGSIM/data/2_simple.txt"
+# output_filepath = "../data/trajectories/2_simple.h5"
+# extract_simple_features(trajdata_filepath, output_filepath)

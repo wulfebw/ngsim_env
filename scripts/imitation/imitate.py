@@ -24,7 +24,7 @@ import auto_validator
 import utils
 
 # setup
-exp_name = "NGSIM-v0"
+exp_name = "NGSIM-v2"
 exp_dir = utils.set_up_experiment(exp_name=exp_name, phase='imitate')
 saver_dir = os.path.join(exp_dir, 'imitate', 'log')
 saver_filepath = os.path.join(saver_dir, 'checkpoint')
@@ -34,11 +34,11 @@ use_infogail = False
 use_critic_replay_memory = True
 latent_dim = 2
 real_data_maxsize = None
-batch_size = 8000
-n_critic_train_epochs = 30
+batch_size = 10000
+n_critic_train_epochs = 55
 n_recognition_train_epochs = 30
 scheduler_k = 20
-trpo_step_size = .5
+trpo_step_size = .025
 critic_learning_rate = .0005
 critic_dropout_keep_prob = .8
 recognition_learning_rate = .0001
@@ -52,22 +52,27 @@ n_itr = start_itr + 1000
 max_path_length = 1000
 
 # load env
-# filename = 'trajdata_i101_trajectories-0750am-0805am.txt'
-filename = '2_simple.txt'
-env = utils.build_ngsim_env(filename, H=65, primesteps=2)
+filename = 'trajdata_i101_trajectories-0750am-0805am.txt'
+# filename = '2_simple.txt'
+env = utils.build_ngsim_env(
+    filename, 
+    H=200, 
+    primesteps=50,
+    terminate_on_collision=False
+)
 # get low and high values for normalizing _real_ actions
 low, high = env.action_space.low, env.action_space.high
 env = TfEnv(normalize(env, normalize_obs=True))
 
 # critic dataset
 # build action normalizer first to use it on the actions 
-# expert_data_filepath = '../../data/trajectories/ngsim.h5'
-expert_data_filepath = '../../data/trajectories/2_simple.h5'
+expert_data_filepath = '../../data/trajectories/ngsim.h5'
+# expert_data_filepath = '../../data/trajectories/2_simple.h5'
 data = utils.load_data(expert_data_filepath, act_low=low, act_high=high)
 
 
 if use_critic_replay_memory:
-    critic_replay_memory = hgail.misc.utils.KeyValueReplayMemory(maxsize=3 *  batch_size)
+    critic_replay_memory = hgail.misc.utils.KeyValueReplayMemory(maxsize=2 *  batch_size)
 else:
     critic_replay_memory = None
 
@@ -140,7 +145,7 @@ with tf.Session() as session:
         policy = GaussianMLPPolicy(
             name="policy",
             env_spec=env.spec,
-            hidden_sizes=(128,128),
+            hidden_sizes=(128,128,64),
             adaptive_std=True,
             output_nonlinearity=None,
             learn_std=True
@@ -177,7 +182,7 @@ with tf.Session() as session:
         max_path_length=max_path_length,
         n_itr=n_itr,
         start_itr=start_itr,
-        discount=.9,
+        discount=.95,
         step_size=trpo_step_size,
         saver=saver,
         saver_filepath=saver_filepath,
