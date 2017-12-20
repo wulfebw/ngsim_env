@@ -24,7 +24,7 @@ import auto_validator
 import utils
 
 # setup
-exp_name = "NGSIM-v2"
+exp_name = "NGSIM-v3"
 exp_dir = utils.set_up_experiment(exp_name=exp_name, phase='imitate')
 saver_dir = os.path.join(exp_dir, 'imitate', 'log')
 saver_filepath = os.path.join(saver_dir, 'checkpoint')
@@ -58,7 +58,8 @@ env = utils.build_ngsim_env(
     filename, 
     H=200, 
     primesteps=50,
-    terminate_on_collision=False
+    terminate_on_collision=False,
+    terminate_on_off_road=False
 )
 # get low and high values for normalizing _real_ actions
 low, high = env.action_space.low, env.action_space.high
