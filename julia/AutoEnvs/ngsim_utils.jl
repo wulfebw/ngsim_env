@@ -163,6 +163,7 @@ function build_feature_extractor(params = Dict())
     push!(subexts, TemporalFeatureExtractor())
     push!(subexts, WellBehavedFeatureExtractor())
     push!(subexts, CarLidarFeatureExtractor(20, carlidar_max_range = 50.))
+    push!(subexts, ForeForeFeatureExtractor())
     ext = MultiFeatureExtractor(subexts)
     return ext
 end
