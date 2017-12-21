@@ -24,7 +24,7 @@ import auto_validator
 import utils
 
 # setup
-exp_name = "NGSIM-v3"
+exp_name = "NGSIM-v4"
 exp_dir = utils.set_up_experiment(exp_name=exp_name, phase='imitate')
 saver_dir = os.path.join(exp_dir, 'imitate', 'log')
 saver_filepath = os.path.join(saver_dir, 'checkpoint')
@@ -34,7 +34,7 @@ use_infogail = True
 use_critic_replay_memory = True
 latent_dim = 2
 real_data_maxsize = None
-batch_size = 1000 # 10000
+batch_size = 10000
 n_critic_train_epochs = 55
 n_recognition_train_epochs = 30
 scheduler_k = 20

@@ -9,8 +9,6 @@ backend = 'Agg' if sys.platform == 'linux' else 'TkAgg'
 matplotlib.use(backend)
 import matplotlib.pyplot as plt
 
-from context_timer import ContextTimer
-
 from rllab.envs.normalized_env import NormalizedEnv
 
 import hgail.misc.utils
@@ -95,24 +93,21 @@ class AutoValidator(Validator):
         keys = objs.keys()
 
         if 'samples_data' in keys:
-            with ContextTimer():
-                print('samples_data')
-                summaries += self._summarize_samples_data(objs['samples_data'])
+            summaries += self._summarize_samples_data(objs['samples_data'])
 
         if 'env' in keys:
             # extract some relevant, wrapped environments
             normalized_env = hgail.misc.utils.extract_wrapped_env(objs['env'], NormalizedEnv)
             julia_env = hgail.misc.utils.extract_wrapped_env(objs['env'], JuliaEnv)
 
-            with ContextTimer():
-                print('obs_mean_std')
-                summaries += self._summarize_obs_mean_std(
-                    normalized_env._obs_mean, 
-                    np.sqrt(normalized_env._obs_var),
-                    self.obs_mean,
-                    self.obs_std,
-                    julia_env.obs_names()
-                )
-        print('finished summarizing')
+        
+            summaries += self._summarize_obs_mean_std(
+                normalized_env._obs_mean, 
+                np.sqrt(normalized_env._obs_var),
+                self.obs_mean,
+                self.obs_std,
+                julia_env.obs_names()
+            )
+
         self.write_summaries(itr, summaries)
         
