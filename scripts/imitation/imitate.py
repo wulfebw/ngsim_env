@@ -156,7 +156,8 @@ with tf.Session() as session:
         critic_final_scale=1.,
         recognition_initial_scale=0.,
         recognition_final_scale=0.2,
-        summary_writer=summary_writer
+        summary_writer=summary_writer,
+        normalize_rewards=True
     )
 
     # running the initialization here to allow for later loading
