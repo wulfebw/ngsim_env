@@ -2,32 +2,150 @@
 import h5py
 import numpy as np
 import os
+import tensorflow as tf
 
+from rllab.baselines.linear_feature_baseline import LinearFeatureBaseline
+from rllab.envs.normalized_env import normalize as normalize_env
 import rllab.misc.logger as logger
+
+from sandbox.rocky.tf.policies.gaussian_mlp_policy import GaussianMLPPolicy
+from sandbox.rocky.tf.envs.base import TfEnv
+
+from hgail.critic.critic import WassersteinCritic
+from hgail.misc.datasets import CriticDataset, RecognitionDataset
+from hgail.policies.gaussian_latent_var_mlp_policy import GaussianLatentVarMLPPolicy
+from hgail.policies.latent_sampler import UniformlyRandomLatentSampler
+from hgail.core.models import ObservationActionMLP
+from hgail.recognition.recognition_model import RecognitionModel
+from hgail.policies.scheduling import ConstantIntervalScheduler
+
+import hgail.misc.utils
 
 from julia_env.julia_env import JuliaEnv
 
-def build_ngsim_env(
-        filename='trajdata_i101_trajectories-0750am-0805am.txt',
-        H=50,
-        primesteps=50,
-        terminate_on_collision=True,
-        terminate_on_off_road=True):
+'''
+Component build functions
+'''
+
+def build_ngsim_env(args, alpha=0.001):
     basedir = os.path.expanduser('~/.julia/v0.6/NGSIM/data')
-    filepaths = [os.path.join(basedir, filename)]
+    filepaths = [os.path.join(basedir, args.ngsim_filename)]
     env_params = dict(
         trajectory_filepaths=filepaths,
-        H=H,
-        primesteps=primesteps,
-        terminate_on_collision=terminate_on_collision,
-        terminate_on_off_road=terminate_on_off_road
+        H=args.env_H,
+        primesteps=args.env_primesteps,
+        terminate_on_collision=False,
+        terminate_on_off_road=False
     )
     env = JuliaEnv(
-            env_id='NGSIMEnv',
-            env_params=env_params,
-            using='AutoEnvs'
+        env_id='NGSIMEnv',
+        env_params=env_params,
+        using='AutoEnvs'
+    )
+    # get low and high values for normalizing _real_ actions
+    low, high = env.action_space.low, env.action_space.high
+    env = TfEnv(normalize_env(env, normalize_obs=True, obs_alpha=alpha))
+    return env, low, high
+
+def build_critic(args, data, env, writer=None):
+    if args.use_critic_replay_memory:
+        critic_replay_memory = hgail.misc.utils.KeyValueReplayMemory(maxsize=2 * args.batch_size)
+    else:
+        critic_replay_memory = None
+
+    critic_dataset = CriticDataset(
+        data, 
+        replay_memory=critic_replay_memory,
+        batch_size=args.critic_batch_size
+    )
+
+    critic_network = ObservationActionMLP(
+        name='critic', 
+        hidden_layer_dims=args.critic_hidden_layer_dims,
+        dropout_keep_prob=args.critic_dropout_keep_prob
+    )
+    critic = WassersteinCritic(
+        obs_dim=env.observation_space.flat_dim,
+        act_dim=env.action_space.flat_dim,
+        dataset=critic_dataset, 
+        network=critic_network,
+        gradient_penalty=args.gradient_penalty,
+        optimizer=tf.train.RMSPropOptimizer(args.critic_learning_rate),
+        n_train_epochs=args.n_critic_train_epochs,
+        summary_writer=writer,
+        grad_norm_rescale=50.,
+        verbose=2,
+    )
+    return critic
+
+def build_policy(args, env):
+    if args.use_infogail:
+        latent_sampler = UniformlyRandomLatentSampler(
+            scheduler=ConstantIntervalScheduler(k=args.scheduler_k),
+            name='latent_sampler',
+            dim=args.latent_dim
         )
-    return env
+        policy = GaussianLatentVarMLPPolicy(
+            name="policy",
+            latent_sampler=latent_sampler,
+            env_spec=env.spec,
+            hidden_sizes=args.policy_mean_hidden_layer_dims,
+            std_hidden_sizes=args.policy_std_hidden_layer_dims
+        )
+    else:
+        policy = GaussianMLPPolicy(
+            name="policy",
+            env_spec=env.spec,
+            hidden_sizes=args.policy_mean_hidden_layer_dims,
+            std_hidden_sizes=args.policy_std_hidden_layer_dims,
+            adaptive_std=True,
+            output_nonlinearity=None,
+            learn_std=True
+        )
+    return policy
+
+def build_recognition_model(args, env, writer=None):
+    if args.use_infogail:
+        recognition_dataset = RecognitionDataset(args.batch_size)
+        recognition_network = ObservationActionMLP(
+            name='recog', 
+            hidden_layer_dims=args.recognition_hidden_layer_dims,
+            output_dim=args.latent_dim
+        )
+        recognition_model = RecognitionModel(
+            obs_dim=env.observation_space.flat_dim,
+            act_dim=env.action_space.flat_dim,
+            dataset=recognition_dataset, 
+            network=recognition_network,
+            variable_type='categorical',
+            latent_dim=args.latent_dim,
+            optimizer=tf.train.AdamOptimizer(args.recognition_learning_rate),
+            n_train_epochs=args.n_recognition_train_epochs,
+            summary_writer=writer,
+            verbose=2
+        )
+    else:
+        recognition_model = None
+    return recognition_model
+
+def build_baseline(args, env):
+    return LinearFeatureBaseline(env_spec=env.spec)
+
+def build_reward_handler(args, writer=None):
+    reward_handler = hgail.misc.utils.RewardHandler(
+        use_env_rewards=False,
+        max_epochs=args.reward_handler_max_epochs, # epoch at which final scales are used
+        critic_final_scale=1.,
+        recognition_initial_scale=0.,
+        recognition_final_scale=args.reward_handler_recognition_final_scale,
+        summary_writer=writer,
+        normalize_rewards=True
+    )
+    return reward_handler
+
+'''
+setup
+'''
 
 def maybe_mkdir(dirpath):
     if not os.path.exists(dirpath):
@@ -55,6 +173,10 @@ def set_up_experiment(
     logger.set_snapshot_mode('gap')
     logger.set_snapshot_gap(snapshot_gap)
     return exp_dir
+
+'''
+data utilities
+'''
 
 def compute_lengths(arr):
     sums = np.sum(np.array(arr), axis=2)
