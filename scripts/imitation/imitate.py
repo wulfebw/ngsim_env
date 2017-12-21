@@ -34,7 +34,7 @@ use_infogail = True
 use_critic_replay_memory = True
 latent_dim = 2
 real_data_maxsize = None
-batch_size = 10000
+batch_size = 500 # 10000
 n_critic_train_epochs = 55
 n_recognition_train_epochs = 30
 scheduler_k = 20
@@ -42,13 +42,8 @@ trpo_step_size = .025
 critic_learning_rate = .0005
 critic_dropout_keep_prob = .8
 recognition_learning_rate = .0005
-initial_filepath = None
-
-if initial_filepath is None:
-    start_itr = 0
-else:
-    start_itr = int(initial_filepath[initial_filepath.rfind('-')+1:])
-n_itr = start_itr + 1000
+params_filepath = os.path.join(exp_dir, 'imitate', 'log', '2.npz')
+n_itr = 1000
 max_path_length = 1000
 
 # load env
@@ -164,11 +159,12 @@ with tf.Session() as session:
         summary_writer=summary_writer
     )
 
+    # running the initialization here to allow for later loading
+    # NOTE: rllab batchpoplot runs this before training as well 
+    # this means that any loading subsequent to this is nullified 
+    # you have to comment of that initialization for any loading to work
     session.run(tf.global_variables_initializer())
-
     saver = tf.train.Saver(max_to_keep=100, keep_checkpoint_every_n_hours=.5)
-    if initial_filepath:
-        saver.restore(session, initial_filepath)
 
     # validator
     validator = auto_validator.AutoValidator(summary_writer, data['obs_mean'], data['obs_std'])
@@ -184,7 +180,6 @@ with tf.Session() as session:
         batch_size=batch_size,
         max_path_length=max_path_length,
         n_itr=n_itr,
-        start_itr=start_itr,
         discount=.95,
         step_size=trpo_step_size,
         saver=saver,
@@ -196,6 +191,10 @@ with tf.Session() as session:
             max_backtracks=50
         )
     )
+
+    # loading
+    if params_filepath is not None:
+        algo.load(params_filepath)
 
     # run training
     algo.train(sess=session)

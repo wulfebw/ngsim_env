@@ -63,11 +63,35 @@ class AutoValidator(Validator):
 
         return summaries
 
+    def _summarize_latent(self, samples_data):
+        summaries = []
+        latent = samples_data['agent_infos']['latent']
+        actions = samples_data['actions']
+        n_samples, latent_dim = latent.shape
+        action_dim = actions.shape[1]
+        # histogram actions, distringuishing based on latent value
+        # assumes discrete latent space
+        for l in range(latent_dim):
+            idxs = np.where(latent[:,l] == 1.)[0]
+            cur_actions = actions[idxs]
+            for a in range(action_dim):
+                plt.hist(cur_actions[:,a], 50)
+                img_sum = plt2imgsum()
+                tag = 'validation/hist_action_{}_latent_{}'.format(a, l)
+                summaries += [tf.Summary.Value(tag=tag, image=img_sum)]
+                tag = 'validation/mean_action_{}_latent_{}'.format(a, l)
+                mean = np.mean(cur_actions[:,a])
+                summaries += [tf.Summary.Value(tag=tag, simple_value=mean)]
+        return summaries
+
     def _summarize_samples_data(self, samples_data):
         summaries = []
         if 'env_infos' in samples_data.keys():
             summaries += self._summarize_env_infos(samples_data['env_infos'])
         summaries += self._summarize_actions(samples_data['actions'])
+
+        if 'agent_infos' in samples_data.keys() and 'latent' in samples_data['agent_infos'].keys():
+            summaries += self._summarize_latent(samples_data)
 
         return summaries
 
