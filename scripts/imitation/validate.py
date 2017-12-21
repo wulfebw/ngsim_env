@@ -41,8 +41,9 @@ def validate_performance():
             policy=policy,
             max_steps=1000 # overshoot and let it terminate
         )
-
-        print(trajs)
+        for (k,v) in trajs[0].items():
+            print(k)
+            print(v)
 
 if __name__ == '__main__':
     validate_performance()
