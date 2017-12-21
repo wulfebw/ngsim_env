@@ -12,7 +12,7 @@ from sandbox.rocky.tf.policies.gaussian_mlp_policy import GaussianMLPPolicy
 
 from hgail.critic.critic import WassersteinCritic
 from hgail.misc.datasets import CriticDataset, RecognitionDataset
-from hgail.policies.categorical_latent_var_mlp_policy import CategoricalLatentVarMLPPolicy
+from hgail.policies.gaussian_latent_var_mlp_policy import GaussianLatentVarMLPPolicy
 from hgail.algos.gail import GAIL
 from hgail.policies.latent_sampler import UniformlyRandomLatentSampler
 from hgail.core.models import ObservationActionMLP
@@ -30,18 +30,18 @@ saver_dir = os.path.join(exp_dir, 'imitate', 'log')
 saver_filepath = os.path.join(saver_dir, 'checkpoint')
 
 # constants
-use_infogail = False
+use_infogail = True
 use_critic_replay_memory = True
 latent_dim = 2
 real_data_maxsize = None
-batch_size = 10000
+batch_size = 1000 # 10000
 n_critic_train_epochs = 55
 n_recognition_train_epochs = 30
 scheduler_k = 20
 trpo_step_size = .025
 critic_learning_rate = .0005
 critic_dropout_keep_prob = .8
-recognition_learning_rate = .0001
+recognition_learning_rate = .0005
 initial_filepath = None
 
 if initial_filepath is None:
@@ -70,7 +70,6 @@ env = TfEnv(normalize(env, normalize_obs=True))
 expert_data_filepath = '../../data/trajectories/ngsim.h5'
 # expert_data_filepath = '../../data/trajectories/2_simple.h5'
 data = utils.load_data(expert_data_filepath, act_low=low, act_high=high)
-
 
 if use_critic_replay_memory:
     critic_replay_memory = hgail.misc.utils.KeyValueReplayMemory(maxsize=2 *  batch_size)
@@ -113,12 +112,12 @@ with tf.Session() as session:
         recognition_dataset = RecognitionDataset(batch_size)
         recognition_network = ObservationActionMLP(
             name='recog', 
-            hidden_layer_dims=[32,32],
+            hidden_layer_dims=[64,32],
             output_dim=latent_dim
         )
         recognition_model = RecognitionModel(
             obs_dim=env.observation_space.flat_dim,
-            act_dim=env.action_space.n,
+            act_dim=env.action_space.flat_dim,
             dataset=recognition_dataset, 
             network=recognition_network,
             variable_type='categorical',
@@ -135,11 +134,12 @@ with tf.Session() as session:
             name='latent_sampler',
             dim=latent_dim
         )
-        policy = CategoricalLatentVarMLPPolicy(
-            policy_name="policy",
+        policy = GaussianLatentVarMLPPolicy(
+            name="policy",
             latent_sampler=latent_sampler,
             env_spec=env.spec,
-            hidden_sizes=(64,64)
+            hidden_sizes=(128,128,64),
+            std_hidden_sizes=(64,32)
         )
     else:
         # build the policy
@@ -157,9 +157,11 @@ with tf.Session() as session:
     baseline = LinearFeatureBaseline(env_spec=env.spec)
     reward_handler = hgail.misc.utils.RewardHandler(
         use_env_rewards=False,
-        max_epochs=50, # epoch at which final scales are used
+        max_epochs=100, # epoch at which final scales are used
         critic_final_scale=1.,
-        recognition_initial_scale=0.
+        recognition_initial_scale=0.,
+        recognition_final_scale=0.2,
+        summary_writer=summary_writer
     )
 
     session.run(tf.global_variables_initializer())
@@ -169,7 +171,7 @@ with tf.Session() as session:
         saver.restore(session, initial_filepath)
 
     # validator
-    validator = auto_validator.AutoValidator(summary_writer)
+    validator = auto_validator.AutoValidator(summary_writer, data['obs_mean'], data['obs_std'])
 
     algo = GAIL(
         critic=critic,
