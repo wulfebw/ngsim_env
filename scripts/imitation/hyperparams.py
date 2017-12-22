@@ -15,6 +15,7 @@ def str2bool(v):
 def parse_args():
     parser = argparse.ArgumentParser()
     # logistics
+    parser.add_argument('--exp_name', type=str, default='NGSIM-gail')
     parser.add_argument('--params_filepath', type=str, default='')
     parser.add_argument('--expert_filepath', type=str, default='../../data/trajectories/ngsim.h5')
 

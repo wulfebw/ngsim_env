@@ -10,8 +10,7 @@ import utils
 from hgail.algos.gail import GAIL
 
 # setup
-exp_name = "NGSIM-v4"
-exp_dir = utils.set_up_experiment(exp_name=exp_name, phase='imitate')
+exp_dir = utils.set_up_experiment(exp_name=args.exp_name, phase='imitate')
 saver_dir = os.path.join(exp_dir, 'imitate', 'log')
 saver_filepath = os.path.join(saver_dir, 'checkpoint')
 args = hyperparams.parse_args()
