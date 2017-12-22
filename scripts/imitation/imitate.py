@@ -10,10 +10,10 @@ import utils
 from hgail.algos.gail import GAIL
 
 # setup
+args = hyperparams.parse_args()
 exp_dir = utils.set_up_experiment(exp_name=args.exp_name, phase='imitate')
 saver_dir = os.path.join(exp_dir, 'imitate', 'log')
 saver_filepath = os.path.join(saver_dir, 'checkpoint')
-args = hyperparams.parse_args()
 np.savez(os.path.join(saver_dir, 'args'), args=args)
 summary_writer = tf.summary.FileWriter(os.path.join(exp_dir, 'imitate', 'summaries'))
 
