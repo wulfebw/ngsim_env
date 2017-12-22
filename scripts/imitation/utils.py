@@ -174,6 +174,8 @@ def set_up_experiment(
     logger.set_snapshot_dir(log_dir)
     logger.set_snapshot_mode('gap')
     logger.set_snapshot_gap(snapshot_gap)
+    log_filepath = os.path.join(log_dir, 'log.txt')
+    logger.add_text_output(log_filepath)
     return exp_dir
 
 '''
