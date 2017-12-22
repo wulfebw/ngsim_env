@@ -4,7 +4,6 @@ import numpy as np
 import os
 import tensorflow as tf
 
-from rllab.baselines.linear_feature_baseline import LinearFeatureBaseline
 from rllab.envs.normalized_env import normalize as normalize_env
 import rllab.misc.logger as logger
 
@@ -19,6 +18,7 @@ from hgail.core.models import ObservationActionMLP
 from hgail.recognition.recognition_model import RecognitionModel
 from hgail.policies.scheduling import ConstantIntervalScheduler
 
+from hgail.baselines.gaussian_mlp_baseline import GaussianMLPBaseline
 import hgail.misc.utils
 
 from julia_env.julia_env import JuliaEnv
@@ -129,7 +129,7 @@ def build_recognition_model(args, env, writer=None):
     return recognition_model
 
 def build_baseline(args, env):
-    return LinearFeatureBaseline(env_spec=env.spec)
+    return GaussianMLPBaseline(env_spec=env.spec)
 
 def build_reward_handler(args, writer=None):
     reward_handler = hgail.misc.utils.RewardHandler(
