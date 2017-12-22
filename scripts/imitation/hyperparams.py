@@ -38,7 +38,7 @@ def parse_args():
     parser.add_argument('--n_critic_train_epochs', type=int, default=55)
     parser.add_argument('--critic_learning_rate', type=float, default=.0005)
     parser.add_argument('--critic_dropout_keep_prob', type=float, default=.8)
-    parser.add_argument('--gradient_penalty', type=float, default=1.)
+    parser.add_argument('--gradient_penalty', type=float, default=5.)
     parser.add_argument('--critic_batch_size', type=int, default=1000)
     parser.add_argument('--critic_hidden_layer_dims', nargs='+', default=(128,128,64))
 

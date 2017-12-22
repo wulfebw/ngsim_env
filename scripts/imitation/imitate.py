@@ -48,7 +48,8 @@ algo = GAIL(
     snapshot_env=False,
     plot=True,
     optimizer_args=dict(
-        max_backtracks=50
+        max_backtracks=50,
+        debug_nan=True
     )
 )
 
