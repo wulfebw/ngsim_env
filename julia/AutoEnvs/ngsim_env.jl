@@ -52,7 +52,9 @@ type NGSIMEnv <: Env
         reclength = get(params, "reclength", reclength)
         primesteps = get(params, "primesteps", primesteps)
         H = get(params, "H", H)
-        render_params = get(params, "render_params", render_params)
+        for (k,v) in get(params, "render_params", render_params)
+            render_params[k] = v
+        end
         terminate_on_collision = get(params, "terminate_on_collision", terminate_on_collision)
         terminate_on_off_road = get(params, "terminate_on_off_road", terminate_on_off_road)
 
@@ -67,9 +69,6 @@ type NGSIMEnv <: Env
         scene = Scene(scene_length)
         rec = SceneRecord(reclength, Δt, scene_length)
         ext = build_feature_extractor(params)
-        if in("render_params", param_keys)
-            render_params = params["render_params"]
-        end
         infos_cache = fill_infos_cache(ext)
         return new(
             trajdatas, 

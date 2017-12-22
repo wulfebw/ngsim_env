@@ -24,10 +24,17 @@ import hgail.misc.utils
 from julia_env.julia_env import JuliaEnv
 
 '''
+Common 
+'''
+def maybe_mkdir(dirpath):
+    if not os.path.exists(dirpath):
+        os.mkdir(dirpath)
+
+'''
 Component build functions
 '''
 
-def build_ngsim_env(args, alpha=0.001):
+def build_ngsim_env(args, exp_dir, alpha=0.001):
     basedir = os.path.expanduser('~/.julia/v0.6/NGSIM/data')
     filepaths = [os.path.join(basedir, args.ngsim_filename)]
     env_params = dict(
@@ -35,7 +42,11 @@ def build_ngsim_env(args, alpha=0.001):
         H=args.env_H,
         primesteps=args.env_primesteps,
         terminate_on_collision=False,
-        terminate_on_off_road=False
+        terminate_on_off_road=False,
+        render_params=dict(
+            viz_dir=os.path.join(exp_dir, 'viz'),
+            zoom=5.
+        )
     )
     env = JuliaEnv(
         env_id='NGSIMEnv',
@@ -148,10 +159,6 @@ def build_reward_handler(args, writer=None):
 '''
 setup
 '''
-
-def maybe_mkdir(dirpath):
-    if not os.path.exists(dirpath):
-        os.mkdir(dirpath)
 
 def latest_snapshot(exp_dir, phase='train'):
     snapshot_dir = os.path.join(exp_dir, phase, 'log')

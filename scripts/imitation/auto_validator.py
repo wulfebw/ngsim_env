@@ -10,6 +10,7 @@ matplotlib.use(backend)
 import matplotlib.pyplot as plt
 
 from rllab.envs.normalized_env import NormalizedEnv
+from rllab.sampler.utils import rollout
 
 import hgail.misc.utils
 from hgail.misc.validator import Validator
@@ -26,10 +27,16 @@ def plt2imgsum():
 
 class AutoValidator(Validator):
 
-    def __init__(self, writer, obs_mean, obs_std):
+    def __init__(
+            self, 
+            writer, 
+            obs_mean, 
+            obs_std,
+            render_every=25):
         super(AutoValidator, self).__init__(writer)
         self.obs_mean = obs_mean
         self.obs_std = obs_std
+        self.render_every = render_every
 
     def _summarize_env_infos(self, env_infos):
         summaries = []
@@ -124,7 +131,6 @@ class AutoValidator(Validator):
             normalized_env = hgail.misc.utils.extract_wrapped_env(objs['env'], NormalizedEnv)
             julia_env = hgail.misc.utils.extract_wrapped_env(objs['env'], JuliaEnv)
 
-        
             summaries += self._summarize_obs_mean_std(
                 normalized_env._obs_mean, 
                 np.sqrt(normalized_env._obs_var),
@@ -132,6 +138,10 @@ class AutoValidator(Validator):
                 self.obs_std,
                 julia_env.obs_names()
             )
+
+        # render a trajectory, this must save to file on its own
+        if 'env' in keys and 'policy' in keys and (itr % self.render_every) == 0:
+            rollout(objs['env'], objs['policy'], animated=True, max_path_length=200)
 
         self.write_summaries(itr, summaries)
         

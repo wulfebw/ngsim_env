@@ -18,7 +18,7 @@ np.savez(os.path.join(saver_dir, 'args'), args=args)
 summary_writer = tf.summary.FileWriter(os.path.join(exp_dir, 'imitate', 'summaries'))
 
 # build components
-env, act_low, act_high = utils.build_ngsim_env(args)
+env, act_low, act_high = utils.build_ngsim_env(args, exp_dir)
 data = utils.load_data(args.expert_filepath, act_low=act_low, act_high=act_high)
 critic = utils.build_critic(args, data, env, summary_writer)
 policy = utils.build_policy(args, env)
@@ -46,7 +46,7 @@ algo = GAIL(
     saver_filepath=saver_filepath,
     force_batch_sampler=True,
     snapshot_env=False,
-    plot=True,
+    plot=False,
     optimizer_args=dict(
         max_backtracks=50,
         debug_nan=True
