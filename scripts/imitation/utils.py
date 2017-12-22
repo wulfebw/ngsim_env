@@ -49,7 +49,7 @@ def build_ngsim_env(args, alpha=0.001):
 
 def build_critic(args, data, env, writer=None):
     if args.use_critic_replay_memory:
-        critic_replay_memory = hgail.misc.utils.KeyValueReplayMemory(maxsize=2 * args.batch_size)
+        critic_replay_memory = hgail.misc.utils.KeyValueReplayMemory(maxsize=3 * args.batch_size)
     else:
         critic_replay_memory = None
 
