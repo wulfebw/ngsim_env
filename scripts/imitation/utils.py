@@ -139,7 +139,9 @@ def build_reward_handler(args, writer=None):
         recognition_initial_scale=0.,
         recognition_final_scale=args.reward_handler_recognition_final_scale,
         summary_writer=writer,
-        normalize_rewards=True
+        normalize_rewards=True,
+        critic_clip_low=-100,
+        critic_clip_high=100,
     )
     return reward_handler
 

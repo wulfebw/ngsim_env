@@ -18,9 +18,6 @@ args = hyperparams.parse_args()
 np.savez(os.path.join(saver_dir, 'args'), args=args)
 summary_writer = tf.summary.FileWriter(os.path.join(exp_dir, 'imitate', 'summaries'))
 
-# set this to load params 
-params_filepath = None # os.path.join(exp_dir, 'imitate', 'log', '2.npz')
-
 # build components
 env, act_low, act_high = utils.build_ngsim_env(args)
 data = utils.load_data(args.expert_filepath, act_low=act_low, act_high=act_high)
@@ -66,8 +63,8 @@ with tf.Session() as session:
     session.run(tf.global_variables_initializer())
 
     # loading
-    if params_filepath is not None:
-        algo.load(params_filepath)
+    if args.params_filepath != '':
+        algo.load(args.params_filepath)
 
     # run training
     algo.train(sess=session)
