@@ -84,7 +84,7 @@ def build_critic(args, data, env, writer=None):
         optimizer=tf.train.RMSPropOptimizer(args.critic_learning_rate),
         n_train_epochs=args.n_critic_train_epochs,
         summary_writer=writer,
-        grad_norm_rescale=50.,
+        grad_norm_rescale=args.critic_grad_rescale,
         verbose=2,
     )
     return critic
