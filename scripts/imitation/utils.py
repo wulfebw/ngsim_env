@@ -34,7 +34,7 @@ def maybe_mkdir(dirpath):
 Component build functions
 '''
 
-def build_ngsim_env(args, exp_dir, alpha=0.001):
+def build_ngsim_env(args, exp_dir='tmp', alpha=0.001):
     basedir = os.path.expanduser('~/.julia/v0.6/NGSIM/data')
     filepaths = [os.path.join(basedir, args.ngsim_filename)]
     env_params = dict(

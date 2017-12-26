@@ -1,4 +1,5 @@
 
+import multiprocessing as mp
 import numpy as np
 import os 
 import sys
@@ -8,6 +9,8 @@ backend = 'Agg' if sys.platform == 'linux' else 'TkAgg'
 import matplotlib
 matplotlib.use(backend)
 import matplotlib.pyplot as plt
+
+from context_timer import ContextTimer
 
 import hgail.misc.simulation
 
@@ -37,14 +40,16 @@ def load_trajectories(filepath):
     return np.load(filepath)['trajs']
 
 def collect_trajectories(
-        args, 
-        params,
-        n_traj=100):
-
-    # build components
-    env, _, _ = utils.build_ngsim_env(args, alpha=0.)
-    policy = utils.build_policy(args, env)
-
+        args,  
+        params, 
+        n_traj, 
+        trajlist,
+        pid=1,
+        env_fn=utils.build_ngsim_env,
+        policy_fn=utils.build_policy,
+        max_steps=200):
+    env, _, _ = env_fn(args, alpha=0.)
+    policy = policy_fn(args, env)
     with tf.Session() as sess:
         # initialize variables
         sess.run(tf.global_variables_initializer())
@@ -57,36 +62,66 @@ def collect_trajectories(
             normalized_env._obs_var = params['normalzing']['obs_var']
 
         # collect trajectories
-        trajs = hgail.misc.simulation.collect_trajectories(
-            n_traj=n_traj,
-            env=env,
-            policy=policy,
-            max_steps=1000 # overshoot and let it terminate
+        for traj_idx in range(n_traj):
+            sys.stdout.write('\rpid: {} traj: {} / {}'.format(pid, traj_idx + 1, n_traj))
+            traj = hgail.misc.simulation.simulate(env, policy, max_steps)
+            trajlist.append(traj)
+
+    return trajlist
+
+def parallel_collect_trajectories(
+        args,
+        params,
+        n_traj,
+        n_proc):
+
+    manager = mp.Manager()
+    trajlist = manager.list()
+    
+    # just force it to be divisible 
+    assert n_traj % n_proc == 0
+    n_traj_proc = n_traj // n_proc
+
+    # pool 
+    pool = mp.Pool(processes=n_proc)
+
+    # start collection
+    results = []
+    for pid in range(n_proc):
+        res = pool.apply_async(
+            collect_trajectories,
+            args=(args, params, n_traj_proc, trajlist, pid)
         )
+        results.append(res)
 
-        hgail.misc.simulation.simulate(env, policy, args.env_H, render=True)
+    # wait for the processes to finish
+    [res.get() for res in results]
 
-    return trajs
+    return trajlist
 
 if __name__ == '__main__':
     # load information relevant to the experiment
-    exp_dir = '../../data/experiments/NGSIM-gail/'
+    exp_dir = '../../data/experiments/NGSIM-infogail/'
     args_filepath = os.path.join(exp_dir, 'imitate/log/args.npz')
     args = np.load(args_filepath)['args'].item()
-    params_filepath = os.path.join(exp_dir, 'imitate/log/itr_109.npz')
+    params_filepath = os.path.join(exp_dir, 'imitate/log/itr_1999.npz')
     params = hgail.misc.utils.load_params(params_filepath)
+    n_traj = 1000
+    n_proc = 10
 
     # replace ngsim_filename with different file for cross validation
     # args.ngsim_filename = 'trajdata_i101_trajectories-0805am-0820am.txt'
-    args.ngsim_filename = 'trajdata_i101_trajectories-0820am-0835am.txt'
+    # args.ngsim_filename = 'trajdata_i101_trajectories-0820am-0835am.txt'
 
     # validation setup 
     validation_dir = os.path.join(exp_dir, 'imitate', 'validation')
     utils.maybe_mkdir(validation_dir)
     output_filepath = os.path.join(validation_dir, '{}_trajectories.npz'.format(args.ngsim_filename.split('.')[0]))
 
-    trajs = collect_trajectories(args, params, n_traj=1)
+    with ContextTimer():
+        trajs = parallel_collect_trajectories(args, params, n_traj, n_proc)
+
     write_trajectories(output_filepath, trajs)
 
-    trajs = load_trajectories(output_filepath)
-    visualize_trajectories(validation_dir, trajs, length=args.env_H)
+    # trajs = load_trajectories(output_filepath)
+    # visualize_trajectories(validation_dir, trajs, length=args.env_H)
