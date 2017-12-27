@@ -4,14 +4,18 @@ import numpy as np
 import os
 import tensorflow as tf
 
+from rllab.envs.base import EnvSpec
 from rllab.envs.normalized_env import normalize as normalize_env
 import rllab.misc.logger as logger
 
+from sandbox.rocky.tf.algos.trpo import TRPO
 from sandbox.rocky.tf.policies.gaussian_mlp_policy import GaussianMLPPolicy
 from sandbox.rocky.tf.envs.base import TfEnv
+from sandbox.rocky.tf.spaces.discrete import Discrete
 
 from hgail.critic.critic import WassersteinCritic
 from hgail.misc.datasets import CriticDataset, RecognitionDataset
+from hgail.policies.categorical_latent_sampler import CategoricalLatentSampler
 from hgail.policies.gaussian_latent_var_mlp_policy import GaussianLatentVarMLPPolicy
 from hgail.policies.latent_sampler import UniformlyRandomLatentSampler
 from hgail.core.models import ObservationActionMLP
@@ -89,13 +93,14 @@ def build_critic(args, data, env, writer=None):
     )
     return critic
 
-def build_policy(args, env):
+def build_policy(args, env, latent_sampler=None):
     if args.use_infogail:
-        latent_sampler = UniformlyRandomLatentSampler(
-            scheduler=ConstantIntervalScheduler(k=args.scheduler_k),
-            name='latent_sampler',
-            dim=args.latent_dim
-        )
+        if latent_sampler is None:
+            latent_sampler = UniformlyRandomLatentSampler(
+                scheduler=ConstantIntervalScheduler(k=args.scheduler_k),
+                name='latent_sampler',
+                dim=args.latent_dim
+            )
         policy = GaussianLatentVarMLPPolicy(
             name="policy",
             latent_sampler=latent_sampler,
@@ -155,6 +160,70 @@ def build_reward_handler(args, writer=None):
         critic_clip_high=100,
     )
     return reward_handler
+
+def build_hierarchy(args, env, writer=None):
+    levels = []
+
+    latent_sampler = UniformlyRandomLatentSampler(
+        name='base_latent_sampler',
+        dim=args.latent_dim,
+        scheduler=ConstantIntervalScheduler(k=args.env_H)
+    )
+    for level_idx in [1,0]:
+        # build env spec based on level 
+        if level_idx == 0:
+            env_spec = env.spec
+        else:
+            env_spec = EnvSpec(
+                observation_space=env.observation_space,
+                action_space=Discrete(args.latent_dim)
+            )
+
+        with tf.variable_scope('level_{}'.format(level_idx)):
+            recognition_model = build_recognition_model(args, env, writer)
+            if level_idx == 0:
+                policy = build_policy(args, env, latent_sampler=latent_sampler)
+            else:
+                scheduler = ConstantIntervalScheduler(k=args.scheduler_k)
+                policy = latent_sampler = CategoricalLatentSampler(
+                    scheduler=scheduler,
+                    name='latent_sampler',
+                    policy_name='latent_sampler_policy',
+                    dim=args.latent_dim,
+                    env_spec=env_spec,
+                    latent_sampler=latent_sampler,
+                    max_n_envs=20
+                )
+            baseline = build_baseline(args, env)
+            algo = TRPO(
+                env=env,
+                policy=policy,
+                baseline=baseline,
+                batch_size=args.batch_size,
+                max_path_length=args.max_path_length,
+                n_itr=args.n_itr,
+                discount=args.discount,
+                step_size=args.trpo_step_size,
+                force_batch_sampler=True,
+                optimizer_args=dict(
+                    max_backtracks=50,
+                    debug_nan=True
+                )
+            )
+            reward_handler = build_reward_handler(args, writer)
+            level = dict(
+                algo=algo,
+                reward_handler=reward_handler,
+                recognition=recognition_model,
+                start_itr=0,
+                end_itr=0 if level_idx == 0 else np.inf
+            )
+            levels.append(level)
+
+    # by convention the order of the levels should be increasing
+    # but they must be built in the reverse order 
+    # so reverse the list before returning it
+    return list(reversed(levels))
 
 '''
 setup
