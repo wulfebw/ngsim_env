@@ -13,14 +13,16 @@ from sandbox.rocky.tf.policies.gaussian_mlp_policy import GaussianMLPPolicy
 from sandbox.rocky.tf.envs.base import TfEnv
 from sandbox.rocky.tf.spaces.discrete import Discrete
 
+from hgail.algos.hgail_impl import Level
 from hgail.critic.critic import WassersteinCritic
 from hgail.misc.datasets import CriticDataset, RecognitionDataset
 from hgail.policies.categorical_latent_sampler import CategoricalLatentSampler
 from hgail.policies.gaussian_latent_var_mlp_policy import GaussianLatentVarMLPPolicy
 from hgail.policies.latent_sampler import UniformlyRandomLatentSampler
 from hgail.core.models import ObservationActionMLP
-from hgail.recognition.recognition_model import RecognitionModel
 from hgail.policies.scheduling import ConstantIntervalScheduler
+from hgail.recognition.recognition_model import RecognitionModel
+from hgail.samplers.hierarchy_sampler import HierarchySampler
 
 from hgail.baselines.gaussian_mlp_baseline import GaussianMLPBaseline
 import hgail.misc.utils
@@ -195,6 +197,8 @@ def build_hierarchy(args, env, writer=None):
                     max_n_envs=20
                 )
             baseline = build_baseline(args, env)
+            force_batch_sampler = True if level_idx == 0 else False
+            sampler_cls = None if level_idx == 0 else HierarchySampler
             algo = TRPO(
                 env=env,
                 policy=policy,
@@ -204,17 +208,19 @@ def build_hierarchy(args, env, writer=None):
                 n_itr=args.n_itr,
                 discount=args.discount,
                 step_size=args.trpo_step_size,
-                force_batch_sampler=True,
+                sampler_cls=sampler_cls,
+                force_batch_sampler=force_batch_sampler,
                 optimizer_args=dict(
                     max_backtracks=50,
                     debug_nan=True
                 )
             )
             reward_handler = build_reward_handler(args, writer)
-            level = dict(
+            level = Level(
+                depth=level_idx,
                 algo=algo,
                 reward_handler=reward_handler,
-                recognition=recognition_model,
+                recognition_model=recognition_model,
                 start_itr=0,
                 end_itr=0 if level_idx == 0 else np.inf
             )
