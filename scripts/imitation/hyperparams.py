@@ -6,6 +6,7 @@ allow for rebuilding everything with the same settings
 '''
 
 import argparse
+import numpy as np
 
 def str2bool(v):
     if v.lower() == 'true':
@@ -20,6 +21,7 @@ def parse_args():
     parser.add_argument('--expert_filepath', type=str, default='../../data/trajectories/ngsim.h5')
     parser.add_argument('--vectorize', type=str2bool, default=False)
     parser.add_argument('--n_envs', type=int, default=50)
+    parser.add_argument('--normalize_clip_std_multiple', type=float, default=10.)
 
     # env
     parser.add_argument('--ngsim_filename', type=str, default='trajdata_i101_trajectories-0750am-0805am.txt')

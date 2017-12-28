@@ -19,7 +19,8 @@ summary_writer = tf.summary.FileWriter(os.path.join(exp_dir, 'imitate', 'summari
 
 # build components
 env, act_low, act_high = utils.build_ngsim_env(args, exp_dir, vectorize=args.vectorize)
-data = utils.load_data(args.expert_filepath, act_low=act_low, act_high=act_high)
+data = utils.load_data(args.expert_filepath, act_low=act_low, act_high=act_high, 
+    clip_std_multiple=args.normalize_clip_std_multiple)
 critic = utils.build_critic(args, data, env, summary_writer)
 policy = utils.build_policy(args, env)
 recognition_model = utils.build_recognition_model(args, env, summary_writer)

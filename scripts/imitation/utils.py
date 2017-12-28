@@ -300,10 +300,13 @@ def compute_lengths(arr):
             lengths.append(zero_idxs[0])
     return np.array(lengths)
 
-def normalize(x):
+def normalize(x, clip_std_multiple=np.inf):
     mean = np.mean(x, axis=0, keepdims=True)
     x = x - mean
     std = np.std(x, axis=0, keepdims=True) + 1e-8
+    up = std * clip_std_multiple
+    lb = - std * clip_std_multiple
+    x = np.clip(x, lb, up)
     x = x / std
     return x, mean, std
 
@@ -334,7 +337,8 @@ def load_data(
         normalize_data=True,
         shuffle=False,
         act_low=-1,
-        act_high=1):
+        act_high=1,
+        clip_std_multiple=np.inf):
     
     # loading varies based on dataset type
     x, feature_names = load_x_feature_names(filepath)
@@ -365,7 +369,7 @@ def load_data(
     act = x[:, act_idxs]
 
     # normalize it all, _no_ test / val split
-    obs, obs_mean, obs_std = normalize(obs)
+    obs, obs_mean, obs_std = normalize(obs, clip_std_multiple)
     # normalize actions to between -1 and 1
     act = normalize_range(act, act_low, act_high)
 
