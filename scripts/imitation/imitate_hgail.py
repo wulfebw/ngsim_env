@@ -22,7 +22,15 @@ env, act_low, act_high = utils.build_ngsim_env(args, exp_dir, vectorize=args.vec
 data = utils.load_data(args.expert_filepath, act_low=act_low, act_high=act_high)
 critic = utils.build_critic(args, data, env, summary_writer)
 hierarchy = utils.build_hierarchy(args, env, summary_writer)
-algo = HGAIL(critic=critic, hierarchy=hierarchy)
+validator = auto_validator.AutoValidator(summary_writer, data['obs_mean'], data['obs_std'])
+saver = tf.train.Saver(max_to_keep=100, keep_checkpoint_every_n_hours=.5)
+algo = HGAIL(
+    critic=critic, 
+    hierarchy=hierarchy,
+    saver=saver,
+    saver_filepath=saver_filepath,
+    validator=validator
+)
 
 # session for actual training
 with tf.Session() as session:
