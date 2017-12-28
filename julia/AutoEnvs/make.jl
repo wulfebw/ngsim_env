@@ -7,6 +7,8 @@ function make(env_id::String, env_params::Dict)
             return DeterministicSingleStepDebugEnv(env_params)
         elseif env_id == "NGSIMEnv"
             return NGSIMEnv(env_params)
+        elseif env_id == "VectorizedNGSIMEnv"
+            return VectorizedNGSIMEnv(env_params)
         else
             throw(ArgumentError("Invalid env_id: $(env_id)"))
         end

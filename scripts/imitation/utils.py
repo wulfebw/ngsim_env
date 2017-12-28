@@ -14,6 +14,7 @@ from sandbox.rocky.tf.envs.base import TfEnv
 from sandbox.rocky.tf.spaces.discrete import Discrete
 
 from hgail.algos.hgail_impl import Level
+from hgail.baselines.gaussian_mlp_baseline import GaussianMLPBaseline
 from hgail.critic.critic import WassersteinCritic
 from hgail.misc.datasets import CriticDataset, RecognitionDataset
 from hgail.policies.categorical_latent_sampler import CategoricalLatentSampler
@@ -23,8 +24,6 @@ from hgail.core.models import ObservationActionMLP
 from hgail.policies.scheduling import ConstantIntervalScheduler
 from hgail.recognition.recognition_model import RecognitionModel
 from hgail.samplers.hierarchy_sampler import HierarchySampler
-
-from hgail.baselines.gaussian_mlp_baseline import GaussianMLPBaseline
 import hgail.misc.utils
 
 from julia_env.julia_env import JuliaEnv

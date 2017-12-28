@@ -4,7 +4,8 @@ export
     sample_trajdata_vehicle,
     build_feature_extractor,
     max_n_objects,
-    fill_infos_cache
+    fill_infos_cache,
+    stack_tensor_dict_list
 
 #=
 Description:
@@ -107,7 +108,7 @@ function load_ngsim_trajdatas(filepaths; minlength::Int=100)
     # the index is just a collection of metadata that is saved with the 
     # trajdatas to allow for a more efficient environment implementation
     indexes_filepaths = [replace(f, ".txt", "-index.jld") for f in filepaths]
-    indexes = []
+    indexes = Dict[]
     for (i, index_filepath) in enumerate(indexes_filepaths)
         # check if index already created
         # if so, load it
@@ -124,7 +125,7 @@ function load_ngsim_trajdatas(filepaths; minlength::Int=100)
     end
 
     # load trajdatas
-    trajdatas = []
+    trajdatas = Records.ListRecord[]
     for filepath in filepaths
         trajdata = load_trajdata(filepath)
         push!(trajdatas, trajdata)
@@ -195,4 +196,19 @@ function fill_infos_cache(ext::MultiFeatureExtractor)
         end
     end
     return cache
+end
+
+function stack_tensor_dict_list(lst::Vector{Dict})
+    dict_keys = collect(keys(lst[1]))
+    ret = Dict()
+    for k in dict_keys
+        example = lst[1][k]
+        if isa(example, Dict)
+            v = stack_tensor_dict_list([x[k] for x in lst])
+        else
+            v = [x[k] for x in lst]
+        end
+        ret[k] = v
+    end
+    return ret
 end

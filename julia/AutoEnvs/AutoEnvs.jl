@@ -16,4 +16,5 @@ include("env.jl")
 include("debug_envs.jl")
 include("ngsim_utils.jl")
 include("ngsim_env.jl")
+include("vectorized_ngsim_env.jl")
 end

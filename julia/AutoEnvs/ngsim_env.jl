@@ -38,6 +38,8 @@ type NGSIMEnv <: Env
     infos_cache::Dict # cache for infos intermediate results
     function NGSIMEnv(
             params::Dict; 
+            trajdatas::Union{Void, Vector{ListRecord}} = nothing,
+            trajinfos::Union{Void, Vector{Dict}} = nothing,
             reclength::Int = 10,
             Δt::Float64 = .1,
             primesteps::Int = 50,
@@ -58,11 +60,13 @@ type NGSIMEnv <: Env
         terminate_on_collision = get(params, "terminate_on_collision", terminate_on_collision)
         terminate_on_off_road = get(params, "terminate_on_off_road", terminate_on_off_road)
 
-        # load trajdatas
-        trajdatas, trajinfos = load_ngsim_trajdatas(
-            params["trajectory_filepaths"],
-            minlength=primesteps + H
-        )
+        # load trajdatas if not provided
+        if trajdatas == nothing || trajinfos == nothing
+            trajdatas, trajinfos = load_ngsim_trajdatas(
+                params["trajectory_filepaths"],
+                minlength=primesteps + H
+            )
+        end
 
         # build components
         scene_length = max_n_objects(trajdatas)
@@ -159,7 +163,7 @@ function Base.step(env::NGSIMEnv, action::Array{Float64})
     else
         terminal = false
     end
-    return get_features(env), 0, terminal, infos
+    return features, 0, terminal, infos
 end
 function _compute_feature_infos(env::NGSIMEnv, features::Array{Float64})
     is_colliding = features[env.infos_cache["is_colliding_idx"]]

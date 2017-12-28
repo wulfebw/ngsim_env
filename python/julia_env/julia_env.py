@@ -20,8 +20,8 @@ class JuliaEnv(Env):
         self._observation_space = build_space(*self.j.observation_space_spec(self.env))
         self._action_space = build_space(*self.j.action_space_spec(self.env))
 
-    def reset(self):
-        return self.j.reset(self.env)
+    def reset(self, dones=None):
+        return self.j.reset(self.env, dones)
 
     def step(self, action):
         return self.j.step(self.env, action)
@@ -31,6 +31,17 @@ class JuliaEnv(Env):
         
     def obs_names(self):
         return self.j.obs_names(self.env)
+
+    def vec_env_executor(self, *args, **kwargs):
+        return self
+
+    @property
+    def num_envs(self):
+        return self.j.num_envs(self.env)
+
+    @property 
+    def vectorized(self):
+        return self.j.vectorized(self.env)
 
     @property
     def observation_space(self):
