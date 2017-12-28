@@ -197,7 +197,8 @@ def build_hierarchy(args, env, writer=None):
             )
             
         with tf.variable_scope('level_{}'.format(level_idx)):
-            recognition_model = build_recognition_model(args, level_env, writer)
+            # recognition_model = build_recognition_model(args, level_env, writer)
+            recognition_model = None
             if level_idx == 0:
                 policy = build_policy(args, env, latent_sampler=latent_sampler)
             else:
