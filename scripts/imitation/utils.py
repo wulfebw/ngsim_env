@@ -16,6 +16,7 @@ from sandbox.rocky.tf.spaces.discrete import Discrete
 from hgail.algos.hgail_impl import Level
 from hgail.baselines.gaussian_mlp_baseline import GaussianMLPBaseline
 from hgail.critic.critic import WassersteinCritic
+from hgail.envs.spec_wrapper_env import SpecWrapperEnv
 from hgail.envs.vectorized_normalized_env import vectorized_normalized_env
 from hgail.misc.datasets import CriticDataset, RecognitionDataset
 from hgail.policies.categorical_latent_sampler import CategoricalLatentSampler
@@ -185,17 +186,18 @@ def build_hierarchy(args, env, writer=None):
         scheduler=ConstantIntervalScheduler(k=args.env_H)
     )
     for level_idx in [1,0]:
-        # build env spec based on level 
+        # wrap env in different spec depending on level
         if level_idx == 0:
-            env_spec = env.spec
+            level_env = env
         else:
-            env_spec = EnvSpec(
-                observation_space=env.observation_space,
-                action_space=Discrete(args.latent_dim)
+            level_env = SpecWrapperEnv(
+                env,
+                action_space=Discrete(args.latent_dim),
+                observation_space=env.observation_space
             )
-
+            
         with tf.variable_scope('level_{}'.format(level_idx)):
-            recognition_model = build_recognition_model(args, env, writer)
+            recognition_model = build_recognition_model(args, level_env, writer)
             if level_idx == 0:
                 policy = build_policy(args, env, latent_sampler=latent_sampler)
             else:
@@ -205,21 +207,24 @@ def build_hierarchy(args, env, writer=None):
                     name='latent_sampler',
                     policy_name='latent_sampler_policy',
                     dim=args.latent_dim,
-                    env_spec=env_spec,
+                    env_spec=level_env.spec,
                     latent_sampler=latent_sampler,
-                    max_n_envs=20
+                    max_n_envs=args.n_envs
                 )
-            baseline = build_baseline(args, env)
+            baseline = build_baseline(args, level_env)
             if args.vectorize:
                 force_batch_sampler = False
-                sampler_args = dict(n_envs=args.n_envs)
+                if level_idx == 0:
+                    sampler_args = dict(n_envs=args.n_envs)
+                else:
+                    sampler_args = None
             else:
                 force_batch_sampler = True
                 sampler_args = None
 
             sampler_cls = None if level_idx == 0 else HierarchySampler
             algo = TRPO(
-                env=env,
+                env=level_env,
                 policy=policy,
                 baseline=baseline,
                 batch_size=args.batch_size,
