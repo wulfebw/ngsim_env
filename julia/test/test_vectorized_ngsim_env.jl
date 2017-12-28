@@ -21,6 +21,11 @@ function test_basics()
     @test spacetype == "Box"
     @test in("high", keys(infos))
     @test in("low", keys(infos))
+
+    for _ in 1:200
+        _, _, terminals, _ = step(env, a)
+        reset(env, terminals)
+    end
     
 end
 

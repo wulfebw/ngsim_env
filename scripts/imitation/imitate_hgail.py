@@ -18,7 +18,7 @@ np.savez(os.path.join(saver_dir, 'args'), args=args)
 summary_writer = tf.summary.FileWriter(os.path.join(exp_dir, 'imitate', 'summaries'))
 
 # build components
-env, act_low, act_high = utils.build_ngsim_env(args, exp_dir)
+env, act_low, act_high = utils.build_ngsim_env(args, exp_dir, vectorize=args.vectorize)
 data = utils.load_data(args.expert_filepath, act_low=act_low, act_high=act_high)
 critic = utils.build_critic(args, data, env, summary_writer)
 hierarchy = utils.build_hierarchy(args, env, summary_writer)

@@ -86,8 +86,12 @@ end
 function Base.step(env::VectorizedNGSIMEnv, actions::Array{Float64})
     infos = Vector{Dict}(env.n_envs)
     for i in 1:env.n_envs
-        env.x[i, :], env.r[i], env.dones[i], infos[i] = step(env.envs[i], actions[i, :])
+            env.x[i, :], env.r[i], env.dones[i], infos[i] = step(env.envs[i], actions[i, :])
     end
+    # vectorized sampler does not call reset on the environment
+    # but expects the environment to handle resetting, so do that here
+    # note: this mutates env.x in order to return the correct obs when resetting
+    reset(env, env.dones)
     return deepcopy(env.x), env.r, env.dones, stack_tensor_dict_list(infos)
 end
 

@@ -18,7 +18,7 @@ np.savez(os.path.join(saver_dir, 'args'), args=args)
 summary_writer = tf.summary.FileWriter(os.path.join(exp_dir, 'imitate', 'summaries'))
 
 # build components
-env, act_low, act_high = utils.build_ngsim_env(args, exp_dir)
+env, act_low, act_high = utils.build_ngsim_env(args, exp_dir, vectorize=args.vectorize)
 data = utils.load_data(args.expert_filepath, act_low=act_low, act_high=act_high)
 critic = utils.build_critic(args, data, env, summary_writer)
 policy = utils.build_policy(args, env)
@@ -29,6 +29,7 @@ validator = auto_validator.AutoValidator(summary_writer, data['obs_mean'], data[
 
 # build algo 
 saver = tf.train.Saver(max_to_keep=100, keep_checkpoint_every_n_hours=.5)
+sampler_args = dict(n_envs=args.n_envs) if args.vectorize else None
 algo = GAIL(
     critic=critic,
     recognition=recognition_model,
@@ -44,7 +45,8 @@ algo = GAIL(
     step_size=args.trpo_step_size,
     saver=saver,
     saver_filepath=saver_filepath,
-    force_batch_sampler=True,
+    force_batch_sampler=False if args.vectorize else True,
+    sampler_args=sampler_args,
     snapshot_env=False,
     plot=False,
     optimizer_args=dict(

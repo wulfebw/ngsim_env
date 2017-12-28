@@ -12,8 +12,10 @@ import matplotlib.pyplot as plt
 from rllab.envs.normalized_env import NormalizedEnv
 from rllab.sampler.utils import rollout
 
-import hgail.misc.utils
+from hgail.envs.vectorized_normalized_env import VectorizedNormalizedEnv
 from hgail.misc.validator import Validator
+from hgail.misc.rollout import vectorized_render_rollout
+import hgail.misc.utils
 
 from julia_env.julia_env import JuliaEnv
 
@@ -129,6 +131,8 @@ class AutoValidator(Validator):
         if 'env' in keys:
             # extract some relevant, wrapped environments
             normalized_env = hgail.misc.utils.extract_wrapped_env(objs['env'], NormalizedEnv)
+            if normalized_env is None:
+                normalized_env = hgail.misc.utils.extract_wrapped_env(objs['env'], VectorizedNormalizedEnv)
             julia_env = hgail.misc.utils.extract_wrapped_env(objs['env'], JuliaEnv)
 
             summaries += self._summarize_obs_mean_std(
@@ -141,7 +145,10 @@ class AutoValidator(Validator):
 
         # render a trajectory, this must save to file on its own
         if 'env' in keys and 'policy' in keys and (itr % self.render_every) == 0:
-            rollout(objs['env'], objs['policy'], animated=True, max_path_length=200)
+            if objs['env'].vectorized:
+                vectorized_render_rollout(objs['env'], objs['policy'], max_path_length=200)
+            else:
+                rollout(objs['env'], objs['policy'], animated=True, max_path_length=200)
 
         self.write_summaries(itr, summaries)
         

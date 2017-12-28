@@ -18,6 +18,8 @@ def parse_args():
     parser.add_argument('--exp_name', type=str, default='NGSIM-gail')
     parser.add_argument('--params_filepath', type=str, default='')
     parser.add_argument('--expert_filepath', type=str, default='../../data/trajectories/ngsim.h5')
+    parser.add_argument('--vectorize', type=str2bool, default=False)
+    parser.add_argument('--n_envs', type=int, default=50)
 
     # env
     parser.add_argument('--ngsim_filename', type=str, default='trajdata_i101_trajectories-0750am-0805am.txt')

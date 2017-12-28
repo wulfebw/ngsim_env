@@ -16,6 +16,7 @@ from sandbox.rocky.tf.spaces.discrete import Discrete
 from hgail.algos.hgail_impl import Level
 from hgail.baselines.gaussian_mlp_baseline import GaussianMLPBaseline
 from hgail.critic.critic import WassersteinCritic
+from hgail.envs.vectorized_normalized_env import vectorized_normalized_env
 from hgail.misc.datasets import CriticDataset, RecognitionDataset
 from hgail.policies.categorical_latent_sampler import CategoricalLatentSampler
 from hgail.policies.gaussian_latent_var_mlp_policy import GaussianLatentVarMLPPolicy
@@ -39,7 +40,11 @@ def maybe_mkdir(dirpath):
 Component build functions
 '''
 
-def build_ngsim_env(args, exp_dir='tmp', alpha=0.001):
+def build_ngsim_env(
+        args, 
+        exp_dir='tmp', 
+        alpha=0.001,
+        vectorize=False):
     basedir = os.path.expanduser('~/.julia/v0.6/NGSIM/data')
     filepaths = [os.path.join(basedir, args.ngsim_filename)]
     env_params = dict(
@@ -51,16 +56,25 @@ def build_ngsim_env(args, exp_dir='tmp', alpha=0.001):
         render_params=dict(
             viz_dir=os.path.join(exp_dir, 'viz'),
             zoom=5.
-        )
+        ),
+        n_envs=args.n_envs
     )
+    if vectorize:
+        env_id = 'VectorizedNGSIMEnv'
+        alpha = alpha * args.n_envs
+        normalize_wrapper = vectorized_normalized_env
+    else:
+        env_id = 'NGSIMEnv'
+        normalize_wrapper = normalize_env
+
     env = JuliaEnv(
-        env_id='NGSIMEnv',
+        env_id=env_id,
         env_params=env_params,
         using='AutoEnvs'
     )
     # get low and high values for normalizing _real_ actions
     low, high = env.action_space.low, env.action_space.high
-    env = TfEnv(normalize_env(env, normalize_obs=True, obs_alpha=alpha))
+    env = TfEnv(normalize_wrapper(env, normalize_obs=True, obs_alpha=alpha))
     return env, low, high
 
 def build_critic(args, data, env, writer=None):
@@ -196,7 +210,13 @@ def build_hierarchy(args, env, writer=None):
                     max_n_envs=20
                 )
             baseline = build_baseline(args, env)
-            force_batch_sampler = True if level_idx == 0 else False
+            if args.vectorize:
+                force_batch_sampler = False
+                sampler_args = dict(n_envs=args.n_envs)
+            else:
+                force_batch_sampler = True
+                sampler_args = None
+
             sampler_cls = None if level_idx == 0 else HierarchySampler
             algo = TRPO(
                 env=env,
@@ -209,6 +229,7 @@ def build_hierarchy(args, env, writer=None):
                 step_size=args.trpo_step_size,
                 sampler_cls=sampler_cls,
                 force_batch_sampler=force_batch_sampler,
+                sampler_args=sampler_args,
                 optimizer_args=dict(
                     max_backtracks=50,
                     debug_nan=True
