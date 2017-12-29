@@ -162,8 +162,8 @@ def collect_hgail():
     args = np.load(args_filepath)['args'].item()
     params_filepath = os.path.join(exp_dir, 'imitate/log/itr_6.npz')
     params = hgail.misc.utils.load_params(params_filepath)
-    n_traj = 10
-    n_proc = 1
+    n_traj = 1000
+    n_proc = 10
 
     # replace ngsim_filename with different file for cross validation
     # args.ngsim_filename = 'trajdata_i101_trajectories-0805am-0820am.txt'
