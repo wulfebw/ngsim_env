@@ -69,11 +69,44 @@ def collect_trajectories(
 
     return trajlist
 
+def collect_hgail_trajectories(
+        args,  
+        params, 
+        n_traj, 
+        trajlist,
+        pid=1,
+        env_fn=utils.build_ngsim_env,
+        hierarchy_fn=utils.build_hierarchy,
+        max_steps=200):
+    env, _, _ = env_fn(args, alpha=0.)
+    hierarchy = hierarchy_fn(args, env)
+    with tf.Session() as sess:
+        # initialize variables
+        sess.run(tf.global_variables_initializer())
+
+        # then load parameters
+        for i, level in enumerate(hierarchy):
+            level.algo.policy.set_param_values(params[i]['policy'])
+        policy = hierarchy[0].algo.policy
+        normalized_env = hgail.misc.utils.extract_normalizing_env(env)
+        if normalized_env is not None:
+            normalized_env._obs_mean = params['normalzing']['obs_mean']
+            normalized_env._obs_var = params['normalzing']['obs_var']
+
+        # collect trajectories
+        for traj_idx in range(n_traj):
+            sys.stdout.write('\rpid: {} traj: {} / {}'.format(pid, traj_idx + 1, n_traj))
+            traj = hgail.misc.simulation.simulate(env, policy, max_steps)
+            trajlist.append(traj)
+
+    return trajlist
+
 def parallel_collect_trajectories(
         args,
         params,
         n_traj,
-        n_proc):
+        n_proc,
+        collect_fn=collect_trajectories):
 
     manager = mp.Manager()
     trajlist = manager.list()
@@ -89,7 +122,7 @@ def parallel_collect_trajectories(
     results = []
     for pid in range(n_proc):
         res = pool.apply_async(
-            collect_trajectories,
+            collect_fn,
             args=(args, params, n_traj_proc, trajlist, pid)
         )
         results.append(res)
@@ -99,7 +132,7 @@ def parallel_collect_trajectories(
 
     return trajlist
 
-if __name__ == '__main__':
+def collect_gail():
     # load information relevant to the experiment
     exp_dir = '../../data/experiments/NGSIM-infogail/'
     args_filepath = os.path.join(exp_dir, 'imitate/log/args.npz')
@@ -123,5 +156,29 @@ if __name__ == '__main__':
 
     write_trajectories(output_filepath, trajs)
 
-    # trajs = load_trajectories(output_filepath)
-    # visualize_trajectories(validation_dir, trajs, length=args.env_H)
+def collect_hgail():
+    exp_dir = '../../data/experiments/NGSIM-hgail/'
+    args_filepath = os.path.join(exp_dir, 'imitate/log/args.npz')
+    args = np.load(args_filepath)['args'].item()
+    params_filepath = os.path.join(exp_dir, 'imitate/log/itr_6.npz')
+    params = hgail.misc.utils.load_params(params_filepath)
+    n_traj = 10
+    n_proc = 1
+
+    # replace ngsim_filename with different file for cross validation
+    # args.ngsim_filename = 'trajdata_i101_trajectories-0805am-0820am.txt'
+    # args.ngsim_filename = 'trajdata_i101_trajectories-0820am-0835am.txt'
+
+    # validation setup 
+    validation_dir = os.path.join(exp_dir, 'imitate', 'validation')
+    utils.maybe_mkdir(validation_dir)
+    output_filepath = os.path.join(validation_dir, '{}_trajectories.npz'.format(args.ngsim_filename.split('.')[0]))
+
+    with ContextTimer():
+        trajs = parallel_collect_trajectories(args, params, n_traj, n_proc, collect_fn=collect_hgail_trajectories)
+
+    write_trajectories(output_filepath, trajs)
+
+if __name__ == '__main__':
+    # collect_gail()
+    collect_hgail()
