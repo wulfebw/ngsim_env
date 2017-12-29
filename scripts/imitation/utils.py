@@ -106,6 +106,7 @@ def build_critic(args, data, env, writer=None):
         summary_writer=writer,
         grad_norm_rescale=args.critic_grad_rescale,
         verbose=2,
+        debug_nan=True
     )
     return critic
 
