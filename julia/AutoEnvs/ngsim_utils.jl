@@ -37,7 +37,7 @@ function index_ngsim_trajectory(
     # iterate each frame collecting info about the vehicles
     for frame in 1 : n_frames
         if verbose > 0
-            print("\rframe $(frame+1) / $(n_frames)")
+            print("\rframe $(frame) / $(n_frames)")
         end
         cur = Set()
         get!(scene, trajdata, frame)
@@ -126,12 +126,15 @@ function load_ngsim_trajdatas(filepaths; minlength::Int=100)
 
     # load trajdatas
     trajdatas = Records.ListRecord[]
+    roadways = Roadway[]
     for filepath in filepaths
         trajdata = load_trajdata(filepath)
         push!(trajdatas, trajdata)
+        roadway = get_corresponding_roadway(filepath)
+        push!(roadways, roadway)
     end
 
-    return trajdatas, indexes
+    return trajdatas, indexes, roadways
 end
 
 #=

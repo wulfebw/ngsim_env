@@ -17,7 +17,7 @@ end
 
 function test_basics()
     # ctor
-    filepath = Pkg.dir("NGSIM", "data", "trajdata_debug_reduced.txt")
+    filepath = Pkg.dir("NGSIM", "data", "trajdata_i80_trajectories-0400-0415.txt")
     params = Dict("trajectory_filepaths"=>[filepath])
     env = NGSIMEnv(params)
 
@@ -54,13 +54,35 @@ function test_basics()
     @test infos["rmse"] != 0.
 end
 
+function test_all_roadways()
+    srand(2)
+    filenames = [
+        "trajdata_i80_trajectories-0400-0415.txt",
+        "trajdata_i80_trajectories-0500-0515.txt",
+        "trajdata_i80_trajectories-0515-0530.txt",
+        "trajdata_i101_trajectories-0805am-0820am.txt",
+        "trajdata_i101_trajectories-0820am-0835am.txt",
+        "trajdata_i101_trajectories-0750am-0805am.txt"
+    ]
+    for fn in filenames
+        filepath = Pkg.dir("NGSIM", "data", fn)
+        params = Dict(
+            "trajectory_filepaths"=>[filepath],
+            "H"=>50,
+            "primesteps"=>5
+        )
+        env = NGSIMEnv(params)
+        x = reset(env)
+    end 
+end
+
 function test_render()
     srand(2)
     filepath = Pkg.dir("NGSIM", "data", "2_simple.txt")
     params = Dict(
         "trajectory_filepaths"=>[filepath],
-        "H"=>40,
-        "primesteps"=>5
+        "H"=>200,
+        "primesteps"=>50
     )
     env = NGSIMEnv(params)
 
@@ -76,7 +98,8 @@ function test_render()
     end
 end
 
-@time test_simple_ctor()
+# @time test_simple_ctor()
 @time test_basics()
-# manually test rendering
+# manual tests
+# @time test_all_roadways()
 # @time test_render() 

@@ -46,7 +46,7 @@ type VectorizedNGSIMEnv <: Env
         terminate_on_off_road = get(params, "terminate_on_off_road", terminate_on_off_road)
 
         # load trajdatas
-        trajdatas, trajinfos = load_ngsim_trajdatas(
+        trajdatas, trajinfos, roadways = load_ngsim_trajdatas(
             params["trajectory_filepaths"],
             minlength=primesteps + H
         )
@@ -58,6 +58,7 @@ type VectorizedNGSIMEnv <: Env
                 params,
                 trajdatas=trajdatas, 
                 trajinfos=trajinfos,
+                roadways=roadways,
                 reclength=reclength,
                 Δt=Δt,
                 primesteps=primesteps,

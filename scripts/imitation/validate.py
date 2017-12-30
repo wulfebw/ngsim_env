@@ -132,7 +132,7 @@ def parallel_collect_trajectories(
 
     return trajlist
 
-def collect_gail():
+def collect_gail(filename=''):
     # load information relevant to the experiment
     exp_dir = '../../data/experiments/NGSIM-infogail/'
     args_filepath = os.path.join(exp_dir, 'imitate/log/args.npz')
@@ -143,8 +143,8 @@ def collect_gail():
     n_proc = 10
 
     # replace ngsim_filename with different file for cross validation
-    # args.ngsim_filename = 'trajdata_i101_trajectories-0805am-0820am.txt'
-    # args.ngsim_filename = 'trajdata_i101_trajectories-0820am-0835am.txt'
+    if filename != '':
+        args.ngsim_filename = filename
 
     # validation setup 
     validation_dir = os.path.join(exp_dir, 'imitate', 'validation')
@@ -156,7 +156,7 @@ def collect_gail():
 
     write_trajectories(output_filepath, trajs)
 
-def collect_hgail():
+def collect_hgail(filename=''):
     exp_dir = '../../data/experiments/NGSIM-hgail/'
     args_filepath = os.path.join(exp_dir, 'imitate/log/args.npz')
     args = np.load(args_filepath)['args'].item()
@@ -166,8 +166,8 @@ def collect_hgail():
     n_proc = 10
 
     # replace ngsim_filename with different file for cross validation
-    # args.ngsim_filename = 'trajdata_i101_trajectories-0805am-0820am.txt'
-    # args.ngsim_filename = 'trajdata_i101_trajectories-0820am-0835am.txt'
+    if filename != '':
+        args.ngsim_filename = filename
 
     # validation setup 
     validation_dir = os.path.join(exp_dir, 'imitate', 'validation')
@@ -180,5 +180,14 @@ def collect_hgail():
     write_trajectories(output_filepath, trajs)
 
 if __name__ == '__main__':
-    # collect_gail()
-    collect_hgail()
+    filenames = [
+        "trajdata_i80_trajectories-0400-0415.txt",
+        "trajdata_i80_trajectories-0500-0515.txt",
+        "trajdata_i80_trajectories-0515-0530.txt",
+        "trajdata_i101_trajectories-0805am-0820am.txt",
+        "trajdata_i101_trajectories-0820am-0835am.txt",
+        "trajdata_i101_trajectories-0750am-0805am.txt"
+    ]
+    for fn in filenames:
+        # collect_gail(fn)
+        collect_hgail(fn)

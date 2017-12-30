@@ -15,6 +15,7 @@ Description:
 type NGSIMEnv <: Env
     trajdatas::Vector{ListRecord}
     trajinfos::Vector{Dict}
+    roadways::Vector{Roadway}
     roadway::Union{Void, Roadway} # current roadway
     scene::Scene
     rec::SceneRecord
@@ -40,6 +41,7 @@ type NGSIMEnv <: Env
             params::Dict; 
             trajdatas::Union{Void, Vector{ListRecord}} = nothing,
             trajinfos::Union{Void, Vector{Dict}} = nothing,
+            roadways::Union{Void, Vector{Roadway}} = nothing,
             reclength::Int = 10,
             Δt::Float64 = .1,
             primesteps::Int = 50,
@@ -61,8 +63,8 @@ type NGSIMEnv <: Env
         terminate_on_off_road = get(params, "terminate_on_off_road", terminate_on_off_road)
 
         # load trajdatas if not provided
-        if trajdatas == nothing || trajinfos == nothing
-            trajdatas, trajinfos = load_ngsim_trajdatas(
+        if trajdatas == nothing || trajinfos == nothing || roadways == nothing
+            trajdatas, trajinfos, roadways = load_ngsim_trajdatas(
                 params["trajectory_filepaths"],
                 minlength=primesteps + H
             )
@@ -77,6 +79,7 @@ type NGSIMEnv <: Env
         return new(
             trajdatas, 
             trajinfos, 
+            roadways,
             nothing,
             scene, 
             rec, 
@@ -101,7 +104,7 @@ function reset(env::NGSIMEnv)
     # set the ego vehicle
     env.ego_veh = env.scene[findfirst(env.scene, env.egoid)]
     # set the roadway
-    env.roadway = get_corresponding_roadway(env.traj_idx)
+    env.roadway = env.roadways[env.traj_idx]
     # env.t is the next timestep to load
     env.t += env.primesteps + 1
     # enforce a maximum horizon 
