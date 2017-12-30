@@ -44,14 +44,14 @@ class AutoValidator(Validator):
         summaries = []
 
         # means 
-        mean_keys = ['rmse', 'is_colliding']
+        mean_keys = ['rmse_pos', 'rmse_vel', 'rmse_t', 'is_colliding']
         for key in mean_keys:
             mean = np.mean(env_infos[key])
             tag = 'validation/mean_{}'.format(key)
             summaries += [tf.Summary.Value(tag=tag, simple_value=mean)]
 
         # hist
-        hist_keys = ['rmse']
+        hist_keys = ['rmse_pos', 'rmse_vel', 'rmse_t']
         for key in hist_keys:
             plt.hist(env_infos[key], 50)
             img_sum = plt2imgsum()

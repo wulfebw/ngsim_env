@@ -51,7 +51,7 @@ function test_basics()
     # test infos 
     reset(env)
     _, _, _, infos = step(env, [1.,1.])
-    @test infos["rmse"] != 0.
+    @test infos["rmse_pos"] != 0.
 end
 
 function test_all_roadways()

@@ -132,7 +132,7 @@ def parallel_collect_trajectories(
 
     return trajlist
 
-def collect_gail(filename=''):
+def collect_gail(filename='', H=None):
     # load information relevant to the experiment
     exp_dir = '../../data/experiments/NGSIM-infogail/'
     args_filepath = os.path.join(exp_dir, 'imitate/log/args.npz')
@@ -145,6 +145,9 @@ def collect_gail(filename=''):
     # replace ngsim_filename with different file for cross validation
     if filename != '':
         args.ngsim_filename = filename
+    # also replace H if provided
+    if H is not None:
+        args.H = H
 
     # validation setup 
     validation_dir = os.path.join(exp_dir, 'imitate', 'validation')
@@ -156,7 +159,7 @@ def collect_gail(filename=''):
 
     write_trajectories(output_filepath, trajs)
 
-def collect_hgail(filename=''):
+def collect_hgail(filename='', H=None):
     exp_dir = '../../data/experiments/NGSIM-hgail/'
     args_filepath = os.path.join(exp_dir, 'imitate/log/args.npz')
     args = np.load(args_filepath)['args'].item()
@@ -168,6 +171,9 @@ def collect_hgail(filename=''):
     # replace ngsim_filename with different file for cross validation
     if filename != '':
         args.ngsim_filename = filename
+    # also replace H if provided
+    if H is not None:
+        args.H = H
 
     # validation setup 
     validation_dir = os.path.join(exp_dir, 'imitate', 'validation')
@@ -180,6 +186,7 @@ def collect_hgail(filename=''):
     write_trajectories(output_filepath, trajs)
 
 if __name__ == '__main__':
+    H = 400
     filenames = [
         "trajdata_i80_trajectories-0400-0415.txt",
         "trajdata_i80_trajectories-0500-0515.txt",
