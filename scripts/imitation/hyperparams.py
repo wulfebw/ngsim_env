@@ -39,8 +39,8 @@ def parse_args():
 
     # critic
     parser.add_argument('--use_critic_replay_memory', type=str2bool, default=True)
-    parser.add_argument('--n_critic_train_epochs', type=int, default=55)
-    parser.add_argument('--critic_learning_rate', type=float, default=.0002)
+    parser.add_argument('--n_critic_train_epochs', type=int, default=40)
+    parser.add_argument('--critic_learning_rate', type=float, default=.0004)
     parser.add_argument('--critic_dropout_keep_prob', type=float, default=.8)
     parser.add_argument('--gradient_penalty', type=float, default=2.)
     parser.add_argument('--critic_grad_rescale', type=float, default=40.)
@@ -56,7 +56,7 @@ def parse_args():
 
     # gail
     parser.add_argument('--batch_size', type=int, default=10000)
-    parser.add_argument('--trpo_step_size', type=float, default=.025)
+    parser.add_argument('--trpo_step_size', type=float, default=.01)
     parser.add_argument('--n_itr', type=int, default=2000)
     parser.add_argument('--max_path_length', type=int, default=1000)
     parser.add_argument('--discount', type=float, default=.95)

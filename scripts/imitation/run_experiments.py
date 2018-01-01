@@ -34,7 +34,7 @@ def new_tensorboard_cmds(session, window, port, expdir):
 def new_activate_cmd(session, window):
     return new_cmd(session, window, ['source', 'activate', 'rllab3'])
 
-def build_gail_cmds(basedir, n_itr=2000, expname='gail', port='55555'):
+def build_gail_cmds(basedir, n_itr=4000, expname='gail', port='55555'):
     cmds = []
     session = expname
     expdir = os.path.join(basedir, expname)
@@ -49,7 +49,7 @@ def build_gail_cmds(basedir, n_itr=2000, expname='gail', port='55555'):
     cmds += new_tensorboard_cmds(session, 'tb', port, expdir)
     return cmds
 
-def build_infogail_cmds(basedir, n_itr=1000, expname='infogail', port='55554'):
+def build_infogail_cmds(basedir, n_itr=2000, expname='infogail', port='55554'):
     cmds = []
     session = expname
     expdir = os.path.join(basedir, expname)
@@ -68,7 +68,7 @@ def build_infogail_cmds(basedir, n_itr=1000, expname='infogail', port='55554'):
 def build_hgail_cmds(
         basedir, 
         params_filepath, 
-        n_itr=1000,
+        n_itr=2000,
         session='infogail', 
         expname='hgail', 
         port='55553'):
