@@ -26,8 +26,8 @@ class JuliaEnv(Env):
     def step(self, action):
         return self.j.step(self.env, action)
 
-    def render(self):
-        return self.j.render(self.env)
+    def render(self, *args, **kwargs):
+        return self.j.render(self.env, *args, **kwargs)
         
     def obs_names(self):
         return self.j.obs_names(self.env)

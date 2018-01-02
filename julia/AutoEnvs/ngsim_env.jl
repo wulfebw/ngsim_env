@@ -158,6 +158,10 @@ function _step!(env::NGSIMEnv, action::Array{Float64})
     step_infos["rmse_pos"] = sqrt(abs2((orig_veh.state.posG - env.ego_veh.state.posG)))
     step_infos["rmse_vel"] = sqrt(abs2((orig_veh.state.v - env.ego_veh.state.v)))
     step_infos["rmse_t"] = sqrt(abs2((orig_veh.state.posF.t - env.ego_veh.state.posF.t)))
+    step_infos["x"] = env.ego_veh.state.posG.x
+    step_infos["y"] = env.ego_veh.state.posG.y
+    step_infos["s"] = env.ego_veh.state.posF.s
+    step_infos["phi"] = env.ego_veh.state.posF.ϕ
     return step_infos
 end
 function Base.step(env::NGSIMEnv, action::Array{Float64})
@@ -220,15 +224,26 @@ Args:
 Returns:
     - img: returns a (height, width, channel) image to display
 =#
-function render(env::NGSIMEnv)
+function render(
+        env::NGSIMEnv; 
+        egocolor::Vector{Float64}=[1.,0.,0.],
+        camtype::String="follow",
+        static_camera_pos::Vector{Float64}=[0.,0.])
     # define colors for all the vehicles
     carcolors = Dict{Int,Colorant}()
+    egocolor = ColorTypes.RGB(egocolor...)
     for veh in env.scene
-        carcolors[veh.id] = veh.id == env.egoid ? colorant"red" : colorant"green"
+        carcolors[veh.id] = veh.id == env.egoid ? egocolor : colorant"green"
     end
 
     # define a camera following the ego vehicle
-    cam = AutoViz.CarFollowCamera{Int}(env.egoid, env.render_params["zoom"])
+    if camtype == "follow"
+        cam = AutoViz.CarFollowCamera{Int}(env.egoid, env.render_params["zoom"])
+    elseif camtype == "static"
+        cam = AutoViz.StaticCamera(VecE2(static_camera_pos...), env.render_params["zoom"])
+    else
+        error("invalid camera type $(camtype)")
+    end
     stats = [
         CarFollowingStatsOverlay(env.egoid, 2), 
         NeighborsOverlay(env.egoid, textparams = TextParams(x = 600, y_start=300))
@@ -240,7 +255,9 @@ function render(env::NGSIMEnv)
         env.roadway,
         stats, 
         cam = cam, 
-        car_colors = carcolors
+        car_colors = carcolors,
+        canvas_height=1200,
+        canvas_width=1200
     )
 
     # save the frame 

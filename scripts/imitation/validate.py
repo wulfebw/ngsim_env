@@ -18,30 +18,7 @@ import hgail.misc.simulation
 import hgail.misc.utils
 
 import utils
-
-parser = argparse.ArgumentParser(description="validation settings")
-parser.add_argument('--nproc', type=int, default=1)
-
-'''
-This is about as hacky as it gets, but I want to avoid editing the rllab 
-source code as much as possible, so it will have to do for now.
-
-Add a reset(self, kwargs**) function to the normalizing environment
-https://stackoverflow.com/questions/972/adding-a-method-to-an-existing-object-instance
-'''
-def normalize_env_reset_with_kwargs(self, **kwargs):
-    ret = self._wrapped_env.reset(**kwargs)
-    if self._normalize_obs:
-        return self._apply_normalize_obs(ret)
-    else:
-        return ret
-
-def add_kwargs_to_reset(env):
-    normalize_env = hgail.misc.utils.extract_normalizing_env(env)
-    if normalize_env is not None:
-        normalize_env.reset = normalize_env_reset_with_kwargs.__get__(normalize_env)
-
-'''end of hack, back to our regularly scheduled programming'''
+from utils import str2bool
 
 def simulate(env, policy, max_steps, render=False, env_kwargs=dict()):
     traj = hgail.misc.simulation.Trajectory()
@@ -79,7 +56,6 @@ def collect_trajectories(
         max_steps,
         use_hgail):
     env, _, _ = env_fn(args, alpha=0.)
-    add_kwargs_to_reset(env)
     policy = policy_fn(args, env)
     with tf.Session() as sess:
         # initialize variables
@@ -206,14 +182,15 @@ def load_egoids(fn, args, n_runs_per_ego_id=1, env_fn=utils.build_ngsim_env):
     return ids
 
 if __name__ == '__main__':
-    args = parser.parse_args()
-    n_runs_per_ego_id = 1
+    parser = argparse.ArgumentParser(description='validation settings')
+    parser.add_argument('--n_proc', type=int, default=1)
+    parser.add_argument('--exp_dir', type=str, default='../../data/experiments/gail/')
+    parser.add_argument('--params_filename', type=str, default='itr_2000.npz')
+    parser.add_argument('--n_runs_per_ego_id', type=int, default=1)
+    parser.add_argument('--use_hgail', type=str2bool, default=False)
+    run_args = parser.parse_args()
 
-    exp_dir = '../../data/experiments/NGSIM-hgail/'
-    params_filename = 'itr_6.npz'
-    use_hgail = True
-
-    args_filepath = os.path.join(exp_dir, 'imitate/log/args.npz')
+    args_filepath = os.path.join(run_args.exp_dir, 'imitate/log/args.npz')
     args = np.load(args_filepath)['args'].item()
     filenames = [
         "trajdata_i80_trajectories-0400-0415.txt",
@@ -225,12 +202,12 @@ if __name__ == '__main__':
     ]
     for fn in filenames:
         args.ngsim_filename = fn
-        egoids = load_egoids(fn, args, n_runs_per_ego_id)
+        egoids = load_egoids(fn, args, run_args.n_runs_per_ego_id)
         collect(
             egoids,
             args,
-            exp_dir=exp_dir,
-            params_filename=params_filename,
-            use_hgail=use_hgail,
-            n_proc=args.nproc
+            exp_dir=run_args.exp_dir,
+            params_filename=run_args.params_filename,
+            use_hgail=run_args.use_hgail,
+            n_proc=run_args.n_proc
         )

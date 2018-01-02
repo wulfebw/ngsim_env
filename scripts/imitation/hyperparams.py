@@ -8,10 +8,7 @@ allow for rebuilding everything with the same settings
 import argparse
 import numpy as np
 
-def str2bool(v):
-    if v.lower() == 'true':
-        return True
-    return False
+from utils import str2bool
 
 def parse_args():
     parser = argparse.ArgumentParser()

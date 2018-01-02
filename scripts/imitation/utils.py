@@ -43,27 +43,56 @@ def partition_list(lst, n):
         sublists[i % n].append(v)
     return sublists
 
+def str2bool(v):
+    if v.lower() == 'true':
+        return True
+    return False
+
 '''
 Component build functions
 '''
+
+'''
+This is about as hacky as it gets, but I want to avoid editing the rllab 
+source code as much as possible, so it will have to do for now.
+
+Add a reset(self, kwargs**) function to the normalizing environment
+https://stackoverflow.com/questions/972/adding-a-method-to-an-existing-object-instance
+'''
+def normalize_env_reset_with_kwargs(self, **kwargs):
+    ret = self._wrapped_env.reset(**kwargs)
+    if self._normalize_obs:
+        return self._apply_normalize_obs(ret)
+    else:
+        return ret
+
+def add_kwargs_to_reset(env):
+    normalize_env = hgail.misc.utils.extract_normalizing_env(env)
+    if normalize_env is not None:
+        normalize_env.reset = normalize_env_reset_with_kwargs.__get__(normalize_env)
+
+'''end of hack, back to our regularly scheduled programming'''
 
 def build_ngsim_env(
         args, 
         exp_dir='tmp', 
         alpha=0.001,
-        vectorize=False):
+        vectorize=False,
+        render_params=None):
     basedir = os.path.expanduser('~/.julia/v0.6/NGSIM/data')
     filepaths = [os.path.join(basedir, args.ngsim_filename)]
+    if render_params is None:
+        render_params = dict(
+            viz_dir=os.path.join(exp_dir, 'viz'),
+            zoom=5.
+        )
     env_params = dict(
         trajectory_filepaths=filepaths,
         H=args.env_H,
         primesteps=args.env_primesteps,
         terminate_on_collision=False,
         terminate_on_off_road=False,
-        render_params=dict(
-            viz_dir=os.path.join(exp_dir, 'viz'),
-            zoom=5.
-        ),
+        render_params=render_params,
         n_envs=args.n_envs
     )
     if vectorize:
@@ -82,6 +111,7 @@ def build_ngsim_env(
     # get low and high values for normalizing _real_ actions
     low, high = env.action_space.low, env.action_space.high
     env = TfEnv(normalize_wrapper(env, normalize_obs=True, obs_alpha=alpha))
+    add_kwargs_to_reset(env)
     return env, low, high
 
 def build_critic(args, data, env, writer=None):
