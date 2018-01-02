@@ -150,12 +150,18 @@ Returns:
     - ts: start timestep for vehicle 
     - te: end timestep for vehicle
 =#
-function sample_trajdata_vehicle(trajinfos, offset::Int=0)
-    traj_idx = rand(1:length(trajinfos))
-    infos = trajinfos[traj_idx]
-    egoid = rand(collect(keys(infos)))
-    ts = infos[egoid]["ts"]
-    te = infos[egoid]["te"]
+function sample_trajdata_vehicle(
+        trajinfos, 
+        offset::Int=0,
+        traj_idx::Union{Void,Int}=nothing,
+        egoid::Union{Void,Int}=nothing)
+    if traj_idx == nothing || egoid == nothing
+        traj_idx = rand(1:length(trajinfos))
+        egoid = rand(collect(keys(trajinfos[traj_idx])))
+    end
+
+    ts = trajinfos[traj_idx][egoid]["ts"]
+    te = trajinfos[traj_idx][egoid]["te"]
     # sample actual start timestep from [ts, te-offset] (assume valid range)
     ts = rand(ts:te - offset)
     return traj_idx, egoid, ts, te

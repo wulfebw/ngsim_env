@@ -16,6 +16,25 @@ import hgail.misc.simulation
 
 import utils
 
+def simulate(env, policy, max_steps, *env_args):
+    traj = hgail.misc.simulation.Trajectory()
+    x = env.reset(*env_args)
+    policy.reset()
+    for step in range(max_steps):
+        a, a_info = policy.get_action(x)
+        nx, r, done, e_info = env.step(a)
+        traj.add(
+            policy.observation_space.flatten(x), 
+            a, 
+            r, 
+            a_info,
+            e_info
+        )
+        if done: 
+            break
+        x = nx
+    return traj.flatten()
+
 def visualize_trajectories(output_dir, trajs, length):
 
     rmses = []

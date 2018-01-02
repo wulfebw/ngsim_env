@@ -90,13 +90,11 @@ type NGSIMEnv <: Env
         )
     end
 end
-function reset(env::NGSIMEnv)
+function _reset(env::NGSIMEnv)
     env.epid += 1
     empty!(env.rec)
     empty!(env.scene)
-    env.traj_idx, env.egoid, env.t, env.h = sample_trajdata_vehicle(
-        env.trajinfos, env.H + env.primesteps
-    )
+    
     # prime 
     for t in env.t:(env.t + env.primesteps)
         update!(env.rec, get!(env.scene, env.trajdatas[env.traj_idx], t))
@@ -110,7 +108,23 @@ function reset(env::NGSIMEnv)
     # enforce a maximum horizon 
     env.h = min(env.h, env.t + env.H)
     return get_features(env)
+end
+function reset(env::NGSIMEnv)
+    env.traj_idx, env.egoid, env.t, env.h = sample_trajdata_vehicle(
+        env.trajinfos, 
+        env.H + env.primesteps
+    )
+    return _reset(env)
 end 
+function reset(env::NGSIMEnv, egoid::Int, traj_idx::Int=1)
+    env.traj_idx, env.egoid, env.t, env.h = sample_trajdata_vehicle(
+        env.trajinfos, 
+        env.H + env.primesteps,
+        traj_idx,
+        egoid
+    )
+    return _reset(env)
+end
 
 #=
 Description:

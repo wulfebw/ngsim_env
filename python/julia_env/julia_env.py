@@ -20,7 +20,7 @@ class JuliaEnv(Env):
         self._observation_space = build_space(*self.j.observation_space_spec(self.env))
         self._action_space = build_space(*self.j.action_space_spec(self.env))
 
-    def reset(self, dones=None):
+    def reset(self, *args, dones=None):
         return self.j.reset(self.env, dones)
 
     def step(self, action):
