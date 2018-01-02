@@ -4,7 +4,6 @@ import h5py
 import multiprocessing as mp
 import numpy as np
 import os 
-import signal
 import sys
 import tensorflow as tf
 
@@ -20,9 +19,6 @@ import hgail.misc.utils
 
 import utils
 from utils import str2bool
-
-def ignore_segsegv(signum, frame):
-    print("segfault!")
 
 def simulate(env, policy, max_steps, render=False, env_kwargs=dict()):
     traj = hgail.misc.simulation.Trajectory()
@@ -59,11 +55,6 @@ def collect_trajectories(
         policy_fn,
         max_steps,
         use_hgail):
-    # julia will throw segfaults occasionally after the collection process 
-    # finishes. In order to keep python operational through that, we just 
-    # ignore them
-    signal.signal(signal.SIGSEGV, ignore_segsegv)
-    
     env, _, _ = env_fn(args, alpha=0.)
     policy = policy_fn(args, env)
     with tf.Session() as sess:
