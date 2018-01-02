@@ -134,6 +134,7 @@ def parallel_collect_trajectories(
 
     # wait for the processes to finish
     [res.get() for res in results]
+    pool.close()
 
     return trajdict
 
