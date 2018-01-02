@@ -37,6 +37,12 @@ def maybe_mkdir(dirpath):
     if not os.path.exists(dirpath):
         os.mkdir(dirpath)
 
+def partition_list(lst, n):
+    sublists = [[] for _ in range(n)]
+    for i, v in enumerate(lst):
+        sublists[i % n].append(v)
+    return sublists
+
 '''
 Component build functions
 '''

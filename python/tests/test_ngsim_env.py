@@ -9,7 +9,7 @@ class TestNGSIMEnv(unittest.TestCase):
 
     def test_ngsim_env(self):
         basedir = os.path.expanduser('~/.julia/v0.6/NGSIM/data')
-        filename = 'trajdata_i101_trajectories-0750am-0805am.txt'
+        filename = 'trajdata_i80_trajectories-0400-0415.txt'
         filepaths = [os.path.join(basedir, filename)]
         env = JuliaEnv(
             env_id='NGSIMEnv',
@@ -19,6 +19,11 @@ class TestNGSIMEnv(unittest.TestCase):
         x = env.reset()
         nx, r, t, info = env.step(np.array([0.,0.]))
         self.assertTrue(np.sum(np.abs(x-nx)) > 1e-1)
+
+        # complex reset
+        x = env.reset(offset=822, egoid=3073)
+        nx = env.reset(offset=822, egoid=3073)
+        np.testing.assert_array_almost_equal(x, nx, 4)
 
 if __name__ == '__main__':
     unittest.main()

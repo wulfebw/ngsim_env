@@ -52,6 +52,12 @@ function test_basics()
     reset(env)
     _, _, _, infos = step(env, [1.,1.])
     @test infos["rmse_pos"] != 0.
+
+    # test reset with egoid
+    x = reset(env; offset=822, egoid=3073)
+    nx = reset(env; offset=822, egoid=3073)
+    @test x == nx
+
 end
 
 function test_all_roadways()

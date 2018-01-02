@@ -107,7 +107,7 @@ function load_ngsim_trajdatas(filepaths; minlength::Int=100)
     # if they are missing, create the index
     # the index is just a collection of metadata that is saved with the 
     # trajdatas to allow for a more efficient environment implementation
-    indexes_filepaths = [replace(f, ".txt", "-index.jld") for f in filepaths]
+    indexes_filepaths = [replace(f, ".txt", "-index-$(minlength).jld") for f in filepaths]
     indexes = Dict[]
     for (i, index_filepath) in enumerate(indexes_filepaths)
         # check if index already created
@@ -116,6 +116,8 @@ function load_ngsim_trajdatas(filepaths; minlength::Int=100)
         if !isfile(index_filepath)
             index = index_ngsim_trajectory(filepaths[i], minlength=minlength)
             JLD.save(index_filepath, "index", index)
+            ids_filepath = replace(index_filepath, ".jld", "-ids.h5")
+            h5write(ids_filepath, "ids", convert(Array{Int}, collect(keys(index))))
         else
             index = JLD.load(index_filepath)["index"]
         end
@@ -162,6 +164,7 @@ function sample_trajdata_vehicle(
 
     ts = trajinfos[traj_idx][egoid]["ts"]
     te = trajinfos[traj_idx][egoid]["te"]
+    
     # sample actual start timestep from [ts, te-offset] (assume valid range)
     ts = rand(ts:te - offset)
     return traj_idx, egoid, ts, te

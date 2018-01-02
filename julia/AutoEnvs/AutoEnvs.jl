@@ -3,6 +3,7 @@ module AutoEnvs
 
 using AutoRisk
 using AutoViz
+using HDF5
 using JLD
 using NGSIM
 using PyPlot
