@@ -49,7 +49,7 @@ def collect_trajectories(
         args,  
         params, 
         egoids, 
-        trajdict,
+        trajlist,
         pid,
         env_fn,
         policy_fn,
@@ -83,9 +83,10 @@ def collect_trajectories(
                 max_steps=max_steps,
                 env_kwargs=dict(egoid=egoid)
             )
-            trajdict[egoid].append(traj)
+            traj['egoid'] = egoid
+            trajlist.append(traj)
 
-    return trajdict
+    return trajlist
 
 def parallel_collect_trajectories(
         args,
@@ -98,11 +99,7 @@ def parallel_collect_trajectories(
     
     # build manager and dictionary mapping ego ids to list of trajectories
     manager = mp.Manager()
-    trajdict = manager.dict()
-
-    # initialize each id to an empty list
-    for egoid in egoids:
-        trajdict[egoid] = []
+    trajlist = manager.list()
 
     # set policy function
     policy_fn = utils.build_hierarchy if use_hgail else utils.build_policy
@@ -122,7 +119,7 @@ def parallel_collect_trajectories(
                 args, 
                 params, 
                 proc_egoids[pid], 
-                trajdict, 
+                trajlist, 
                 pid,
                 env_fn,
                 policy_fn,
@@ -136,7 +133,7 @@ def parallel_collect_trajectories(
     [res.get() for res in results]
     pool.close()
 
-    return trajdict
+    return trajlist
 
 def collect(
         egoids,
