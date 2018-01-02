@@ -48,7 +48,7 @@ def parse_args():
     parser.add_argument('--critic_hidden_layer_dims', nargs='+', default=(128,128,64))
 
     # recognition
-    parser.add_argument('--latent_dim', type=int, default=2)
+    parser.add_argument('--latent_dim', type=int, default=4)
     parser.add_argument('--n_recognition_train_epochs', type=int, default=30)
     parser.add_argument('--scheduler_k', type=int, default=20)
     parser.add_argument('--recognition_learning_rate', type=float, default=.0005)

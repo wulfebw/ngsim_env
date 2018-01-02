@@ -6,6 +6,7 @@ import sys
 
 parser = argparse.ArgumentParser(description="Run commands")
 parser.add_argument('-n', '--dry-run', action='store_true')
+parser.add_argument('--mode', type=str, default='gail')
 
 def new_session(session, window):
     cmds = []
@@ -34,7 +35,7 @@ def new_tensorboard_cmds(session, window, port, expdir):
 def new_activate_cmd(session, window):
     return new_cmd(session, window, ['source', 'activate', 'rllab3'])
 
-def build_gail_cmds(basedir, n_itr=4000, expname='gail', port='55555'):
+def build_gail_cmds(basedir, n_itr=2000, expname='gail', port='55555'):
     cmds = []
     session = expname
     expdir = os.path.join(basedir, expname)
@@ -49,7 +50,7 @@ def build_gail_cmds(basedir, n_itr=4000, expname='gail', port='55555'):
     cmds += new_tensorboard_cmds(session, 'tb', port, expdir)
     return cmds
 
-def build_infogail_cmds(basedir, n_itr=2000, expname='infogail', port='55554'):
+def build_infogail_cmds(basedir, n_itr=1000, expname='infogail', port='55554'):
     cmds = []
     session = expname
     expdir = os.path.join(basedir, expname)
@@ -68,7 +69,7 @@ def build_infogail_cmds(basedir, n_itr=2000, expname='infogail', port='55554'):
 def build_hgail_cmds(
         basedir, 
         params_filepath, 
-        n_itr=2000,
+        n_itr=1000,
         session='infogail', 
         expname='hgail', 
         port='55553'):
@@ -86,17 +87,21 @@ def build_hgail_cmds(
     cmds += new_tensorboard_cmds(session, 'tb_hgail', port, expdir)
     return cmds
 
-def build_cmds():
+def build_cmds(mode='gail'):
+    cmds = []
     basedir = '../../data/experiments/'
-    gail_cmds = build_gail_cmds(basedir)
-    infogail_cmds, infogail_dir, params_filepath = build_infogail_cmds(basedir)
-    hgail_cmds = build_hgail_cmds(basedir, params_filepath)
-    cmds = gail_cmds + infogail_cmds + hgail_cmds
+    if mode == 'gail' or mode == 'all':
+        gail_cmds = build_gail_cmds(basedir)
+        cmds += gail_cmds
+    if mode == 'hgail' or mode == 'all':
+        infogail_cmds, infogail_dir, params_filepath = build_infogail_cmds(basedir)
+        hgail_cmds = build_hgail_cmds(basedir, params_filepath)
+        cmds += infogail_cmds + hgail_cmds
     return cmds
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    cmds = build_cmds()
+    cmds = build_cmds(args.mode)
     print('\n'.join(cmds))
     if args.dry_run:
         print('\nabove commands would be run if dry-run not set')
