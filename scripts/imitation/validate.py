@@ -6,6 +6,7 @@ import numpy as np
 import os 
 import sys
 import tensorflow as tf
+import time
 
 backend = 'Agg' if sys.platform == 'linux' else 'TkAgg'
 import matplotlib
@@ -96,7 +97,6 @@ def parallel_collect_trajectories(
         env_fn=utils.build_ngsim_env,
         max_steps=200,
         use_hgail=False):
-    
     # build manager and dictionary mapping ego ids to list of trajectories
     manager = mp.Manager()
     trajlist = manager.list()
@@ -132,7 +132,8 @@ def parallel_collect_trajectories(
     # wait for the processes to finish
     [res.get() for res in results]
     pool.close()
-
+    # let the julia processes finish up
+    time.sleep(5)
     return trajlist
 
 def collect(
