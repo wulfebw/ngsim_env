@@ -33,6 +33,7 @@ def parse_args():
     parser.add_argument('--use_infogail', type=str2bool, default=True)
     parser.add_argument('--policy_mean_hidden_layer_dims', nargs='+', default=(128,128,64))
     parser.add_argument('--policy_std_hidden_layer_dims', nargs='+', default=(128,64))
+    parser.add_argument('--policy_recurrent', type=str2bool, default=False)
 
     # critic
     parser.add_argument('--use_critic_replay_memory', type=str2bool, default=True)

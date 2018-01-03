@@ -34,11 +34,13 @@ class AutoValidator(Validator):
             writer, 
             obs_mean, 
             obs_std,
-            render_every=25):
+            render_every=25,
+            flat_recurrent=False):
         super(AutoValidator, self).__init__(writer)
         self.obs_mean = obs_mean
         self.obs_std = obs_std
         self.render_every = render_every
+        self.flat_recurrent = flat_recurrent
 
     def _summarize_env_infos(self, env_infos):
         summaries = []
@@ -53,7 +55,7 @@ class AutoValidator(Validator):
         # hist
         hist_keys = ['rmse_pos', 'rmse_vel', 'rmse_t']
         for key in hist_keys:
-            plt.hist(env_infos[key], 50)
+            plt.hist(np.reshape(env_infos[key], -1), 50)
             img_sum = plt2imgsum()
             tag = 'validation/hist_{}'.format(key)
             summaries += [tf.Summary.Value(tag=tag, image=img_sum)]
@@ -75,7 +77,7 @@ class AutoValidator(Validator):
     def _summarize_latent(self, samples_data):
         summaries = []
         latent = samples_data['agent_infos']['latent']
-        actions = samples_data['actions']
+        actions = hgail.misc.utils.flatten(samples_data['actions'])
         n_samples, latent_dim = latent.shape
         action_dim = actions.shape[1]
         # histogram actions, distringuishing based on latent value
@@ -97,7 +99,11 @@ class AutoValidator(Validator):
         summaries = []
         if 'env_infos' in samples_data.keys():
             summaries += self._summarize_env_infos(samples_data['env_infos'])
-        summaries += self._summarize_actions(samples_data['actions'])
+        if self.flat_recurrent:
+            actions = hgail.misc.utils.flatten(samples_data['actions'])
+        else:
+            actions = samples_data['actions']
+        summaries += self._summarize_actions(actions)
 
         if 'agent_infos' in samples_data.keys() and 'latent' in samples_data['agent_infos'].keys():
             summaries += self._summarize_latent(samples_data)

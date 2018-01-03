@@ -10,6 +10,7 @@ import rllab.misc.logger as logger
 
 from sandbox.rocky.tf.algos.trpo import TRPO
 from sandbox.rocky.tf.policies.gaussian_mlp_policy import GaussianMLPPolicy
+from sandbox.rocky.tf.policies.gaussian_gru_policy import GaussianGRUPolicy
 from sandbox.rocky.tf.envs.base import TfEnv
 from sandbox.rocky.tf.spaces.discrete import Discrete
 
@@ -123,7 +124,8 @@ def build_critic(args, data, env, writer=None):
     critic_dataset = CriticDataset(
         data, 
         replay_memory=critic_replay_memory,
-        batch_size=args.critic_batch_size
+        batch_size=args.critic_batch_size,
+        flat_recurrent=args.policy_recurrent
     )
 
     critic_network = ObservationActionMLP(
@@ -162,15 +164,24 @@ def build_policy(args, env, latent_sampler=None):
             std_hidden_sizes=args.policy_std_hidden_layer_dims
         )
     else:
-        policy = GaussianMLPPolicy(
-            name="policy",
-            env_spec=env.spec,
-            hidden_sizes=args.policy_mean_hidden_layer_dims,
-            std_hidden_sizes=args.policy_std_hidden_layer_dims,
-            adaptive_std=True,
-            output_nonlinearity=None,
-            learn_std=True
-        )
+        if args.policy_recurrent:
+            policy = GaussianGRUPolicy(
+                name="policy",
+                env_spec=env.spec,
+                hidden_dim=args.policy_mean_hidden_layer_dims[-1],
+                output_nonlinearity=None,
+                learn_std=True
+            )
+        else:
+            policy = GaussianMLPPolicy(
+                name="policy",
+                env_spec=env.spec,
+                hidden_sizes=args.policy_mean_hidden_layer_dims,
+                std_hidden_sizes=args.policy_std_hidden_layer_dims,
+                adaptive_std=True,
+                output_nonlinearity=None,
+                learn_std=True
+            )
     return policy
 
 def build_recognition_model(args, env, writer=None):

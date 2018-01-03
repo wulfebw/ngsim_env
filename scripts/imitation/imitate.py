@@ -3,6 +3,8 @@ import numpy as np
 import os
 import tensorflow as tf
 
+from sandbox.rocky.tf.optimizers.conjugate_gradient_optimizer import FiniteDifferenceHvp, ConjugateGradientOptimizer
+
 from hgail.algos.gail import GAIL
 
 import auto_validator
@@ -26,11 +28,23 @@ policy = utils.build_policy(args, env)
 recognition_model = utils.build_recognition_model(args, env, summary_writer)
 baseline = utils.build_baseline(args, env)
 reward_handler = utils.build_reward_handler(args, summary_writer)
-validator = auto_validator.AutoValidator(summary_writer, data['obs_mean'], data['obs_std'])
+validator = auto_validator.AutoValidator(
+    summary_writer, 
+    data['obs_mean'], 
+    data['obs_std'],
+    flat_recurrent=args.policy_recurrent
+)
 
 # build algo 
 saver = tf.train.Saver(max_to_keep=100, keep_checkpoint_every_n_hours=.5)
 sampler_args = dict(n_envs=args.n_envs) if args.vectorize else None
+if args.policy_recurrent:
+    optimizer = ConjugateGradientOptimizer(
+        max_backtracks=50,
+        hvp_approach=FiniteDifferenceHvp(base_eps=1e-5)
+    )
+else:
+    optimizer = None
 algo = GAIL(
     critic=critic,
     recognition=recognition_model,
@@ -50,6 +64,7 @@ algo = GAIL(
     sampler_args=sampler_args,
     snapshot_env=False,
     plot=False,
+    optimizer=optimizer,
     optimizer_args=dict(
         max_backtracks=50,
         debug_nan=True
