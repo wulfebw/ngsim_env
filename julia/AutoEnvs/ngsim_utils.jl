@@ -25,6 +25,7 @@ Returns:
 function index_ngsim_trajectory(
         filepath::String; 
         minlength::Int=100,
+        offset::Int=500,
         verbose::Int=1)
     # setup
     index = Dict()
@@ -35,9 +36,9 @@ function index_ngsim_trajectory(
     prev, cur = Set(), Set()
 
     # iterate each frame collecting info about the vehicles
-    for frame in 1 : n_frames
+    for frame in offset : n_frames - offset
         if verbose > 0
-            print("\rframe $(frame) / $(n_frames)")
+            print("\rframe $(frame) / $(n_frames - offset)")
         end
         cur = Set()
         get!(scene, trajdata, frame)
@@ -64,7 +65,7 @@ function index_ngsim_trajectory(
 
     # at this point, any ids in cur are in the last frame, so add them in 
     for id in cur
-        index[id]["te"] = n_frames
+        index[id]["te"] = n_frames - offset
     end
 
     # postprocess to remove undesirable trajectories

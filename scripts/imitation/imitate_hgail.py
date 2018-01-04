@@ -19,8 +19,14 @@ summary_writer = tf.summary.FileWriter(os.path.join(exp_dir, 'imitate', 'summari
 
 # build components
 env, act_low, act_high = utils.build_ngsim_env(args, exp_dir, vectorize=args.vectorize)
-data = utils.load_data(args.expert_filepath, act_low=act_low, act_high=act_high, 
-    clip_std_multiple=args.normalize_clip_std_multiple)
+data = utils.load_data(
+    args.expert_filepath, 
+    act_low=act_low, 
+    act_high=act_high, 
+    min_length=args.env_H + args.env_primesteps,
+    clip_std_multiple=args.normalize_clip_std_multiple,
+    ngsim_filename=args.ngsim_filename
+)
 critic = utils.build_critic(args, data, env, summary_writer)
 hierarchy = utils.build_hierarchy(args, env, summary_writer)
 validator = auto_validator.AutoValidator(summary_writer, data['obs_mean'], data['obs_std'])

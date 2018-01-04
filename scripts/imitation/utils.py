@@ -32,6 +32,18 @@ import hgail.misc.utils
 from julia_env.julia_env import JuliaEnv
 
 '''
+Const
+'''
+NGSIM_FILENAME_TO_ID = {
+    'trajdata_i101_trajectories-0750am-0805am.txt':1,
+    'trajdata_i101_trajectories-0805am-0820am.txt':2,
+    'trajdata_i101_trajectories-0820am-0835am.txt':3,
+    'trajdata_i80_trajectories-0400-0415.txt':4,
+    'trajdata_i80_trajectories-0500-0515.txt':5,
+    'trajdata_i80_trajectories-0515-0530.txt':6
+}
+
+'''
 Common 
 '''
 def maybe_mkdir(dirpath):
@@ -368,12 +380,17 @@ def normalize_range(x, low, high):
     x = np.clip(x, -1, 1)
     return x
 
-def load_x_feature_names(filepath):
+def load_x_feature_names(filepath, ngsim_filename):
     f = h5py.File(filepath, 'r')
     xs = []
-    for i in range(1,6+1):
+    traj_id = NGSIM_FILENAME_TO_ID[ngsim_filename]
+    # in case this nees to allow for multiple files in the future
+    traj_ids = [traj_id]
+    for i in traj_ids:
         if str(i) in f.keys():
             xs.append(f[str(i)])
+        else:
+            raise ValueError('invalid key to trajectory data: {}'.format(i))
     x = np.concatenate(xs)
     feature_names = f.attrs['feature_names']
     return x, feature_names
@@ -381,8 +398,9 @@ def load_x_feature_names(filepath):
 def load_data(
         filepath,
         act_keys=['accel', 'turn_rate_global'],
+        ngsim_filename='trajdata_i101_trajectories-0750am-0805am.txt',
         debug_size=None,
-        min_length=40,
+        min_length=50,
         normalize_data=True,
         shuffle=False,
         act_low=-1,
@@ -390,7 +408,7 @@ def load_data(
         clip_std_multiple=np.inf):
     
     # loading varies based on dataset type
-    x, feature_names = load_x_feature_names(filepath)
+    x, feature_names = load_x_feature_names(filepath, ngsim_filename)
 
     # optionally keep it to a reasonable size
     if debug_size is not None:
@@ -408,7 +426,9 @@ def load_data(
     # i.e., throw out timeseries information
     xs = []
     for i, l in enumerate(lengths):
-        xs.append(x[i,:l])
+        # enforce minimum length constraint
+        if l >= min_length:
+            xs.append(x[i,:l])
     x = np.concatenate(xs)
 
     # split into observations and actions
