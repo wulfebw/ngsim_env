@@ -10,7 +10,7 @@ import numpy as np
 
 from utils import str2bool
 
-def parse_args():
+def parse_args(arglist=None):
     parser = argparse.ArgumentParser()
     # logistics
     parser.add_argument('--exp_name', type=str, default='NGSIM-gail')
@@ -60,5 +60,23 @@ def parse_args():
     parser.add_argument('--discount', type=float, default=.95)
 
     # parse and return
-    args = parser.parse_args()
+    if arglist is None:
+        args = parser.parse_args()
+    else:
+        args = parser.parse_args(arglist)
     return args
+
+def load_args(args_filepath):
+    '''
+    This function enables backward-compatible usage of saved args files by 
+    filling in missing values with default values.
+    '''
+    orig = np.load(args_filepath)['args'].item()
+    new = parse_args(arglist=[])
+    orig_keys = set(orig.__dict__.keys())
+    new_keys = list(new.__dict__.keys())
+    # replace all keys in both orig and new, in new, with orig values
+    for k in new_keys:
+        if k in orig_keys:
+            new.__dict__[k] = orig.__dict__[k]
+    return new

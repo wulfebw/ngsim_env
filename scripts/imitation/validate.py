@@ -18,6 +18,7 @@ from context_timer import ContextTimer
 import hgail.misc.simulation
 import hgail.misc.utils
 
+import hyperparams
 import utils
 from utils import str2bool
 
@@ -200,7 +201,7 @@ def load_egoids(fn, args, n_runs_per_ego_id=1, env_fn=utils.build_ngsim_env):
         ts = ids_file['ts'].value
         # subtract offset gives valid end points
         te = ids_file['te'].value - offset
-        starts = np.array([np.random.randint(s,e) for zip(ts,te)])
+        starts = np.array([np.random.randint(s,e+1) for (s,e) in zip(ts,te)])
         # write to file
         starts_file = h5py.File(start_times_filepath, 'w')
         starts_file.create_dataset('starts', data=starts)
@@ -224,7 +225,7 @@ if __name__ == '__main__':
     run_args = parser.parse_args()
 
     args_filepath = os.path.join(run_args.exp_dir, 'imitate/log/args.npz')
-    args = np.load(args_filepath)['args'].item()
+    args = hyperparams.load_args(args_filepath)
     filenames = [
         "trajdata_i80_trajectories-0400-0415.txt",
         "trajdata_i80_trajectories-0500-0515.txt",
