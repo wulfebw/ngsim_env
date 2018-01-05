@@ -6,7 +6,8 @@ import sys
 
 parser = argparse.ArgumentParser(description="Run commands")
 parser.add_argument('-n', '--dry-run', action='store_true')
-parser.add_argument('--mode', type=str, default='gail')
+parser.add_argument('--mode', type=str, default='all')
+parser.add_argument('--prefix', type=str, default='0')
 
 def new_session(session, window):
     cmds = []
@@ -93,24 +94,35 @@ def build_hgail_cmds(
     cmds += new_tensorboard_cmds(session, 'tb_hgail', port, expdir)
     return cmds
 
-def build_cmds(mode='gail'):
+def build_cmds(mode='gail', prefix=''):
     cmds = []
     basedir = '../../data/experiments/'
     if mode == 'gail' or mode == 'all':
-        gail_cmds = build_gail_cmds(basedir)
+        expname = '{}gail'.format(prefix)
+        gail_cmds = build_gail_cmds(basedir, expname=expname)
         cmds += gail_cmds
     if mode == 'hgail' or mode == 'all':
-        infogail_cmds, infogail_dir, params_filepath = build_infogail_cmds(basedir)
-        hgail_cmds = build_hgail_cmds(basedir, params_filepath)
+        expname = '{}infogail'.format(prefix)
+        infogail_cmds, infogail_dir, params_filepath = build_infogail_cmds(
+            basedir,
+            expname=expname
+        )
+        expname = '{}hgail'.format(prefix)
+        hgail_cmds = build_hgail_cmds(basedir, params_filepath, expname=expname)
         cmds += infogail_cmds + hgail_cmds
     if mode == 'recurrent_gail' or mode == 'all':
-        recurrent_gail_cmds = build_gail_cmds(basedir, expname='recurrent_gail', recurrent=True)
+        expname = '{}recurrent_gail'.format(prefix)
+        recurrent_gail_cmds = build_gail_cmds(
+            basedir, 
+            expname=expname, 
+            recurrent=True,
+            port='55552')
         cmds += recurrent_gail_cmds
     return cmds
 
 if __name__ == '__main__':
     args = parser.parse_args()
-    cmds = build_cmds(args.mode)
+    cmds = build_cmds(args.mode, args.prefix)
     print('\n'.join(cmds))
     if args.dry_run:
         print('\nabove commands would be run if dry-run not set')
