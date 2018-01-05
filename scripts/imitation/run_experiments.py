@@ -98,20 +98,24 @@ def build_cmds(mode='gail', prefix=''):
     cmds = []
     basedir = '../../data/experiments/'
     if mode == 'gail' or mode == 'all':
-        expname = '{}gail'.format(prefix)
+        expname = '{}_gail'.format(prefix)
         gail_cmds = build_gail_cmds(basedir, expname=expname)
         cmds += gail_cmds
     if mode == 'hgail' or mode == 'all':
-        expname = '{}infogail'.format(prefix)
+        infogail_expname = '{}_infogail'.format(prefix)
         infogail_cmds, infogail_dir, params_filepath = build_infogail_cmds(
             basedir,
-            expname=expname
+            expname=infogail_expname
         )
-        expname = '{}hgail'.format(prefix)
-        hgail_cmds = build_hgail_cmds(basedir, params_filepath, expname=expname)
+        expname = '{}_hgail'.format(prefix)
+        hgail_cmds = build_hgail_cmds(
+            basedir, 
+            params_filepath, 
+            expname=expname,
+            session=infogail_expname)
         cmds += infogail_cmds + hgail_cmds
     if mode == 'recurrent_gail' or mode == 'all':
-        expname = '{}recurrent_gail'.format(prefix)
+        expname = '{}_recurrent_gail'.format(prefix)
         recurrent_gail_cmds = build_gail_cmds(
             basedir, 
             expname=expname, 
