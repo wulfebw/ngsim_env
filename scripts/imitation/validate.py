@@ -50,6 +50,7 @@ def collect_trajectories(
         args,  
         params, 
         egoids, 
+        starts,
         trajlist,
         pid,
         env_fn,
@@ -82,9 +83,10 @@ def collect_trajectories(
                 env, 
                 policy, 
                 max_steps=max_steps,
-                env_kwargs=dict(egoid=egoid)
+                env_kwargs=dict(egoid=egoid, start=starts[egoid])
             )
             traj['egoid'] = egoid
+            traj['start'] = starts[egoid]
             trajlist.append(traj)
 
     return trajlist
@@ -93,6 +95,7 @@ def parallel_collect_trajectories(
         args,
         params,
         egoids,
+        starts,
         n_proc,
         env_fn=utils.build_ngsim_env,
         max_steps=200,
@@ -119,6 +122,7 @@ def parallel_collect_trajectories(
                 args, 
                 params, 
                 proc_egoids[pid], 
+                starts,
                 trajlist, 
                 pid,
                 env_fn,
@@ -138,6 +142,7 @@ def parallel_collect_trajectories(
 
 def collect(
         egoids,
+        starts,
         args,
         exp_dir,
         use_hgail,
@@ -159,6 +164,7 @@ def collect(
             args, 
             params, 
             egoids, 
+            starts,
             n_proc,
             max_steps=max_steps,
             use_hgail=use_hgail
@@ -177,8 +183,36 @@ def load_egoids(fn, args, n_runs_per_ego_id=1, env_fn=utils.build_ngsim_env):
         if not os.path.exists(ids_filepath):
             raise ValueError('file unable to be created, check args')
     ids = np.array(h5py.File(ids_filepath, 'r')['ids'].value)
+
+    # we want to sample start times uniformly from the range of possible values 
+    # but we also want these start times to be identical for every model we 
+    # validate. So we sample the start times a single time, and save them.
+    # if they exist, we load them in and reuse them
+    start_times_filename = fn.replace('.txt', '-index-{}-starts.h5'.format(offset))
+    start_times_filepath = os.path.join(basedir, start_times_filename)
+    # check if start time filepath exists
+    if os.path.exists(start_times_filepath):
+        # load them in
+        starts = np.array(h5py.File(start_times_filepath, 'r')['starts'].value)
+    # otherwise, sample the start times and save them
+    else:
+        ids_file = h5py.File(ids_filepath, 'r')
+        ts = ids_file['ts'].value
+        # subtract offset gives valid end points
+        te = ids_file['te'].value - offset
+        starts = np.array([np.random.randint(s,e) for zip(ts,te)])
+        # write to file
+        starts_file = h5py.File(start_times_filepath, 'w')
+        starts_file.create_dataset('starts', data=starts)
+        starts_file.close()
+
+    # create a dict from id to start time
+    id2starts = dict()
+    for (egoid, start) in zip(ids, starts):
+        id2starts[egoid] = start
+
     ids = np.tile(ids, n_runs_per_ego_id)
-    return ids
+    return ids, id2starts
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='validation settings')
@@ -201,9 +235,10 @@ if __name__ == '__main__':
     ]
     for fn in filenames:
         args.ngsim_filename = fn
-        egoids = load_egoids(fn, args, run_args.n_runs_per_ego_id)
+        egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
         collect(
             egoids,
+            starts,
             args,
             exp_dir=run_args.exp_dir,
             params_filename=run_args.params_filename,

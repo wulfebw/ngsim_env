@@ -18,7 +18,7 @@ end
 function test_basics()
     # ctor
     filepath = Pkg.dir("NGSIM", "data", "trajdata_i80_trajectories-0400-0415.txt")
-    params = Dict("trajectory_filepaths"=>[filepath])
+    params = Dict("trajectory_filepaths"=>[filepath], "H"=>200)
     env = NGSIMEnv(params)
 
     # reset, step
@@ -54,8 +54,8 @@ function test_basics()
     @test infos["rmse_pos"] != 0.
 
     # test reset with egoid
-    x = reset(env; offset=822, egoid=3073)
-    nx = reset(env; offset=822, egoid=3073)
+    x = reset(env; offset=250, egoid=3194, start=8886)
+    nx = reset(env; offset=250, egoid=3194, start=8886)
     @test x == nx
 
 end

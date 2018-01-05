@@ -94,13 +94,15 @@ function reset(
         env::NGSIMEnv; 
         offset::Int=env.H + env.primesteps,
         egoid::Union{Void,Int}=nothing, 
+        start::Union{Void,Int}=nothing,
         traj_idx::Int=1)
     # sample the trajectory, ego vehicle
     env.traj_idx, env.egoid, env.t, env.h = sample_trajdata_vehicle(
         env.trajinfos, 
         offset,
         traj_idx,
-        egoid
+        egoid,
+        start
     )  
 
     # update / reset containers

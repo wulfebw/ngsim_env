@@ -117,8 +117,22 @@ function load_ngsim_trajdatas(filepaths; minlength::Int=100)
         if !isfile(index_filepath)
             index = index_ngsim_trajectory(filepaths[i], minlength=minlength)
             JLD.save(index_filepath, "index", index)
+            # write this information to an hdf5 file for use in python
+            # the reason we write two files is that it's convenient to load 
+            # via jld a dictionary that can be used directly
             ids_filepath = replace(index_filepath, ".jld", "-ids.h5")
-            h5write(ids_filepath, "ids", convert(Array{Int}, collect(keys(index))))
+            ids = convert(Array{Int}, collect(keys(index)))
+            ts = Int[]
+            te = Int[]
+            for id in ids
+                push!(ts, index[id]["ts"])
+                push!(te, index[id]["te"])
+            end
+            h5open(ids_filepath, "w") do file
+                write(file, "ids", ids)  
+                write(file, "ts", ts)
+                write(file, "te", te)
+            end
         else
             index = JLD.load(index_filepath)["index"]
         end
@@ -157,17 +171,19 @@ function sample_trajdata_vehicle(
         trajinfos, 
         offset::Int=0,
         traj_idx::Union{Void,Int}=nothing,
-        egoid::Union{Void,Int}=nothing)
-    if traj_idx == nothing || egoid == nothing
+        egoid::Union{Void,Int}=nothing,
+        start::Union{Void,Int}=nothing)
+    if traj_idx == nothing || egoid == nothing || start == nothing
         traj_idx = rand(1:length(trajinfos))
         egoid = rand(collect(keys(trajinfos[traj_idx])))
+        ts = trajinfos[traj_idx][egoid]["ts"]
+        te = trajinfos[traj_idx][egoid]["te"]
+        ts = rand(ts:te - offset)
+    else
+        ts = start
+        te = start + offset
     end
 
-    ts = trajinfos[traj_idx][egoid]["ts"]
-    te = trajinfos[traj_idx][egoid]["te"]
-    
-    # sample actual start timestep from [ts, te-offset] (assume valid range)
-    ts = rand(ts:te - offset)
     return traj_idx, egoid, ts, te
 end
 

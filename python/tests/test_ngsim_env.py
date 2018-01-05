@@ -21,8 +21,8 @@ class TestNGSIMEnv(unittest.TestCase):
         self.assertTrue(np.sum(np.abs(x-nx)) > 1e-1)
 
         # complex reset
-        x = env.reset(offset=822, egoid=3073)
-        nx = env.reset(offset=822, egoid=3073)
+        x = env.reset(offset=250, egoid=3194, start=8886)
+        nx = env.reset(offset=250, egoid=3194, start=8886)
         np.testing.assert_array_almost_equal(x, nx, 4)
 
 if __name__ == '__main__':
