@@ -180,7 +180,7 @@ def build_policy(args, env, latent_sampler=None):
             policy = GaussianGRUPolicy(
                 name="policy",
                 env_spec=env.spec,
-                hidden_dim=args.policy_mean_hidden_layer_dims[-1],
+                hidden_dim=args.recurrent_hidden_dim,
                 output_nonlinearity=None,
                 learn_std=True
             )

@@ -35,7 +35,12 @@ def new_tensorboard_cmds(session, window, port, expdir):
 def new_activate_cmd(session, window):
     return new_cmd(session, window, ['source', 'activate', 'rllab3'])
 
-def build_gail_cmds(basedir, n_itr=2000, expname='gail', port='55555'):
+def build_gail_cmds(
+        basedir, 
+        n_itr=2000, 
+        recurrent=False, 
+        expname='gail', 
+        port='55555'):
     cmds = []
     session = expname
     expdir = os.path.join(basedir, expname)
@@ -45,7 +50,8 @@ def build_gail_cmds(basedir, n_itr=2000, expname='gail', port='55555'):
         'python', 'imitate.py', 
         '--exp_name', expname,
         '--use_infogail', 'False',
-        '--n_itr', n_itr
+        '--n_itr', n_itr,
+        '--policy_recurrent', recurrent
     ])]
     cmds += new_tensorboard_cmds(session, 'tb', port, expdir)
     return cmds
@@ -97,6 +103,9 @@ def build_cmds(mode='gail'):
         infogail_cmds, infogail_dir, params_filepath = build_infogail_cmds(basedir)
         hgail_cmds = build_hgail_cmds(basedir, params_filepath)
         cmds += infogail_cmds + hgail_cmds
+    if mode == 'recurrent_gail' or mode == 'all':
+        recurrent_gail_cmds = build_gail_cmds(basedir, expname='recurrent_gail', recurrent=True)
+        cmds += recurrent_gail_cmds
     return cmds
 
 if __name__ == '__main__':
