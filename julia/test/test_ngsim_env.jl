@@ -84,7 +84,7 @@ end
 
 function test_render()
     srand(2)
-    filepath = Pkg.dir("NGSIM", "data", "2_simple.txt")
+    filepath = Pkg.dir("NGSIM", "data", "trajdata_i101_trajectories-0805am-0820am.txt")
     params = Dict(
         "trajectory_filepaths"=>[filepath],
         "H"=>200,

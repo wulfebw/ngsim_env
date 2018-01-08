@@ -41,12 +41,6 @@ def simulate(env, policy, max_steps, render=False, env_kwargs=dict()):
         x = nx
     return traj.flatten()
 
-def write_trajectories(filepath, trajs):
-    np.savez(filepath, trajs=trajs)
-
-def load_trajectories(filepath):
-    return np.load(filepath)['trajs']
-
 def collect_trajectories(
         args,  
         params, 
@@ -171,12 +165,12 @@ def collect(
             use_hgail=use_hgail
         )
 
-    write_trajectories(output_filepath, trajs)
+    utils.write_trajectories(output_filepath, trajs)
 
-def load_egoids(fn, args, n_runs_per_ego_id=1, env_fn=utils.build_ngsim_env):
+def load_egoids(filename, args, n_runs_per_ego_id=1, env_fn=utils.build_ngsim_env):
     offset = args.env_H + args.env_primesteps
     basedir = os.path.expanduser('~/.julia/v0.6/NGSIM/data/')
-    ids_filename = fn.replace('.txt', '-index-{}-ids.h5'.format(offset))
+    ids_filename = filename.replace('.txt', '-index-{}-ids.h5'.format(offset))
     ids_filepath = os.path.join(basedir, ids_filename)
     if not os.path.exists(ids_filepath):
         # this should create the ids file
@@ -189,7 +183,7 @@ def load_egoids(fn, args, n_runs_per_ego_id=1, env_fn=utils.build_ngsim_env):
     # but we also want these start times to be identical for every model we 
     # validate. So we sample the start times a single time, and save them.
     # if they exist, we load them in and reuse them
-    start_times_filename = fn.replace('.txt', '-index-{}-starts.h5'.format(offset))
+    start_times_filename = filename.replace('.txt', '-index-{}-starts.h5'.format(offset))
     start_times_filepath = os.path.join(basedir, start_times_filename)
     # check if start time filepath exists
     if os.path.exists(start_times_filepath):

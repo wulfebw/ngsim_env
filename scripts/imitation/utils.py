@@ -35,12 +35,12 @@ from julia_env.julia_env import JuliaEnv
 Const
 '''
 NGSIM_FILENAME_TO_ID = {
-    'trajdata_i101_trajectories-0750am-0805am.txt':1,
-    'trajdata_i101_trajectories-0805am-0820am.txt':2,
-    'trajdata_i101_trajectories-0820am-0835am.txt':3,
-    'trajdata_i80_trajectories-0400-0415.txt':4,
-    'trajdata_i80_trajectories-0500-0515.txt':5,
-    'trajdata_i80_trajectories-0515-0530.txt':6
+    'trajdata_i101_trajectories-0750am-0805am.txt': 1,
+    'trajdata_i101_trajectories-0805am-0820am.txt': 2,
+    'trajdata_i101_trajectories-0820am-0835am.txt': 3,
+    'trajdata_i80_trajectories-0400-0415.txt': 4,
+    'trajdata_i80_trajectories-0500-0515.txt': 5,
+    'trajdata_i80_trajectories-0515-0530.txt': 6
 }
 
 '''
@@ -60,6 +60,31 @@ def str2bool(v):
     if v.lower() == 'true':
         return True
     return False
+
+def write_trajectories(filepath, trajs):
+    np.savez(filepath, trajs=trajs)
+
+def load_trajectories(filepath):
+    return np.load(filepath)['trajs']
+
+def filename2label(fn):
+    s = fn.find('-') + 1
+    e = fn.rfind('_')
+    return fn[s:e]
+
+def load_trajs_labels(directory):
+    filenames = [
+        'trajdata_i101_trajectories-0750am-0805am_trajectories.npz',
+        'trajdata_i101_trajectories-0805am-0820am_trajectories.npz',
+        'trajdata_i101_trajectories-0820am-0835am_trajectories.npz',
+        'trajdata_i80_trajectories-0400-0415_trajectories.npz',
+        'trajdata_i80_trajectories-0500-0515_trajectories.npz',
+        'trajdata_i80_trajectories-0515-0530_trajectories.npz'
+    ]
+    labels = [filename2label(fn) for fn in filenames]
+    filepaths = [os.path.join(directory, fn) for fn in filenames]
+    trajs = [load_trajectories(fp) for fp in filepaths]
+    return trajs, labels
 
 '''
 Component build functions
@@ -88,7 +113,7 @@ def add_kwargs_to_reset(env):
 
 def build_ngsim_env(
         args, 
-        exp_dir='tmp', 
+        exp_dir='/tmp', 
         alpha=0.001,
         vectorize=False,
         render_params=None):
