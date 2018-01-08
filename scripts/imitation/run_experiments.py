@@ -38,7 +38,7 @@ def new_activate_cmd(session, window):
 
 def build_gail_cmds(
         basedir, 
-        n_itr=2000, 
+        n_itr=3000, 
         recurrent=False, 
         expname='gail', 
         port='55555'):
@@ -57,7 +57,7 @@ def build_gail_cmds(
     cmds += new_tensorboard_cmds(session, 'tb', port, expdir)
     return cmds
 
-def build_infogail_cmds(basedir, n_itr=1000, expname='infogail', port='55554'):
+def build_infogail_cmds(basedir, n_itr=2000, expname='infogail', port='55554'):
     cmds = []
     session = expname
     expdir = os.path.join(basedir, expname)
