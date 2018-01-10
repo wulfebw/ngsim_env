@@ -78,6 +78,8 @@ class AutoValidator(Validator):
         summaries = []
         latent = samples_data['agent_infos']['latent']
         actions = hgail.misc.utils.flatten(samples_data['actions'])
+        if len(latent.shape) == 3:
+            latent = np.reshape(latent, (-1, latent.shape[-1]))
         n_samples, latent_dim = latent.shape
         action_dim = actions.shape[1]
         # histogram actions, distringuishing based on latent value

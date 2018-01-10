@@ -21,6 +21,7 @@ from hgail.envs.spec_wrapper_env import SpecWrapperEnv
 from hgail.envs.vectorized_normalized_env import vectorized_normalized_env
 from hgail.misc.datasets import CriticDataset, RecognitionDataset
 from hgail.policies.categorical_latent_sampler import CategoricalLatentSampler
+from hgail.policies.gaussian_latent_var_gru_policy import GaussianLatentVarGRUPolicy
 from hgail.policies.gaussian_latent_var_mlp_policy import GaussianLatentVarMLPPolicy
 from hgail.policies.latent_sampler import UniformlyRandomLatentSampler
 from hgail.core.models import ObservationActionMLP
@@ -128,6 +129,7 @@ def build_ngsim_env(
         trajectory_filepaths=filepaths,
         H=args.env_H,
         primesteps=args.env_primesteps,
+        action_repeat=args.env_action_repeat,
         terminate_on_collision=False,
         terminate_on_off_road=False,
         render_params=render_params,
@@ -193,13 +195,21 @@ def build_policy(args, env, latent_sampler=None):
                 name='latent_sampler',
                 dim=args.latent_dim
             )
-        policy = GaussianLatentVarMLPPolicy(
-            name="policy",
-            latent_sampler=latent_sampler,
-            env_spec=env.spec,
-            hidden_sizes=args.policy_mean_hidden_layer_dims,
-            std_hidden_sizes=args.policy_std_hidden_layer_dims
-        )
+        if args.policy_recurrent:
+            policy = GaussianLatentVarGRUPolicy(
+                name="policy",
+                latent_sampler=latent_sampler,
+                env_spec=env.spec,
+                hidden_dim=args.recurrent_hidden_dim,
+            )
+        else:
+            policy = GaussianLatentVarMLPPolicy(
+                name="policy",
+                latent_sampler=latent_sampler,
+                env_spec=env.spec,
+                hidden_sizes=args.policy_mean_hidden_layer_dims,
+                std_hidden_sizes=args.policy_std_hidden_layer_dims
+            )
     else:
         if args.policy_recurrent:
             policy = GaussianGRUPolicy(
@@ -223,7 +233,10 @@ def build_policy(args, env, latent_sampler=None):
 
 def build_recognition_model(args, env, writer=None):
     if args.use_infogail:
-        recognition_dataset = RecognitionDataset(args.batch_size)
+        recognition_dataset = RecognitionDataset(
+            args.batch_size,
+            flat_recurrent=args.policy_recurrent
+        )
         recognition_network = ObservationActionMLP(
             name='recog', 
             hidden_layer_dims=args.recognition_hidden_layer_dims,
@@ -462,10 +475,16 @@ def load_data(
     act_idxs = [i for (i,n) in enumerate(feature_names) if n in act_keys]
     act = x[:, act_idxs]
 
-    # normalize it all, _no_ test / val split
-    obs, obs_mean, obs_std = normalize(obs, clip_std_multiple)
-    # normalize actions to between -1 and 1
-    act = normalize_range(act, act_low, act_high)
+    if normalize_data:
+
+        # normalize it all, _no_ test / val split
+        obs, obs_mean, obs_std = normalize(obs, clip_std_multiple)
+        # normalize actions to between -1 and 1
+        act = normalize_range(act, act_low, act_high)
+
+    else:
+        obs_mean = None
+        obs_std = None
 
     return dict(
         observations=obs,

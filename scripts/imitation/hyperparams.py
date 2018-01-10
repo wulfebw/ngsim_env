@@ -24,6 +24,7 @@ def parse_args(arglist=None):
     parser.add_argument('--ngsim_filename', type=str, default='trajdata_i101_trajectories-0750am-0805am.txt')
     parser.add_argument('--env_H', type=int, default=200)
     parser.add_argument('--env_primesteps', type=int, default=50)
+    parser.add_argument('--env_action_repeat', type=int, default=1)
 
     # reward handler
     parser.add_argument('--reward_handler_max_epochs', type=int, default=100)
