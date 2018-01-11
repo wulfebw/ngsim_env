@@ -29,7 +29,12 @@ data = utils.load_data(
 )
 critic = utils.build_critic(args, data, env, summary_writer)
 hierarchy = utils.build_hierarchy(args, env, summary_writer)
-validator = auto_validator.AutoValidator(summary_writer, data['obs_mean'], data['obs_std'])
+validator = auto_validator.AutoValidator(
+    summary_writer, 
+    data['obs_mean'], 
+    data['obs_std'],
+    flat_recurrent=args.policy_recurrent
+)
 saver = tf.train.Saver(max_to_keep=100, keep_checkpoint_every_n_hours=.5)
 algo = HGAIL(
     critic=critic, 
