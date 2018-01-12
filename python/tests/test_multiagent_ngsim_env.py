@@ -1,37 +1,34 @@
-'''
-Note: this test will fail if hgail is not installed
-'''
+
 import numpy as np
 import os
 import tensorflow as tf
 import unittest
 
+from rllab.baselines.zero_baseline import ZeroBaseline
+
 from sandbox.rocky.tf.algos.trpo import TRPO
 from sandbox.rocky.tf.envs.base import TfEnv
 from sandbox.rocky.tf.policies.gaussian_mlp_policy import GaussianMLPPolicy
 
-from hgail.baselines.gaussian_mlp_baseline import GaussianMLPBaseline
-from hgail.envs.vectorized_normalized_env import vectorized_normalized_env
-
 from julia_env.julia_env import JuliaEnv
 
-class TestVectorizedNGSIMEnv(unittest.TestCase):
+class TestMultiagentNGSIMEnv(unittest.TestCase):
 
     def setUp(self):
         # reset graph before each test case
         tf.set_random_seed(1)
         np.random.seed(1)
-        tf.reset_default_graph()   
+        tf.reset_default_graph() 
 
-    def test_vectorized_ngsim_env(self):
+    def test_multiagent_ngsim_env(self):
         basedir = os.path.expanduser('~/.julia/v0.6/NGSIM/data')
         filename = 'trajdata_i101_trajectories-0750am-0805am.txt'
         filepaths = [os.path.join(basedir, filename)]
-        n_envs = 100
+        n_veh = 5
         env = JuliaEnv(
-            env_id='VectorizedNGSIMEnv',
+            env_id='MultiagentNGSIMEnv',
             env_params=dict(
-                n_envs=n_envs, 
+                n_veh=n_veh, 
                 trajectory_filepaths=filepaths,
                 H=200,
                 primesteps=50
@@ -39,7 +36,7 @@ class TestVectorizedNGSIMEnv(unittest.TestCase):
             using='AutoEnvs'
         )
         low, high = env.action_space.low, env.action_space.high
-        env = TfEnv(vectorized_normalized_env(env, normalize_obs=True))
+        env = TfEnv(env)
         policy = GaussianMLPPolicy(
             name="policy",
             env_spec=env.spec,
@@ -49,15 +46,15 @@ class TestVectorizedNGSIMEnv(unittest.TestCase):
             output_nonlinearity=None,
             learn_std=True
         )
-        baseline = GaussianMLPBaseline(env_spec=env.spec)
+        baseline = ZeroBaseline(env_spec=env.spec)
         algo = TRPO(
             env=env, 
             policy=policy, 
             baseline=baseline,
             n_itr=1,
-            batch_size=10000,
+            batch_size=1000,
             sampler_args=dict(
-                n_envs=n_envs
+                n_envs=n_veh
             )
         )
         with tf.Session() as sess:

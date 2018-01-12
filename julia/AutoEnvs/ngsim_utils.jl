@@ -2,6 +2,7 @@ export
     index_ngsim_trajectory,
     load_ngsim_trajdatas,
     sample_trajdata_vehicle,
+    sample_multiple_trajdata_vehicle,
     build_feature_extractor,
     max_n_objects,
     fill_infos_cache,
@@ -185,6 +186,98 @@ function sample_trajdata_vehicle(
     end
 
     return traj_idx, egoid, ts, te
+end
+
+#=
+Description
+    This function samples n values from the set s without replacement, and 
+    does not work with anything except a set s. Could use statsbase, but want 
+    to avoid the dependency.
+
+Args:
+    - s: a set
+    - n: number of values to sample
+
+Returns:
+    - a subset of the values in s, as a list containing n elements
+=#
+function random_sample_from_set_without_replacement(s, n)
+    @assert length(s) >= n
+    sampled = Set()
+    for i in 1:n
+        cur = rand(s)
+        push!(sampled, cur)
+        delete!(s, cur)
+    end
+    return collect(sampled)
+end
+
+function sample_multiple_trajdata_vehicle(
+        n_veh::Int,
+        trajinfos, 
+        offset::Int;
+        max_resamples::Int = 100,
+        egoid::Union{Void, Int} = nothing,
+        traj_idx::Union{Void, Int} = nothing,
+        verbose::Bool = true)
+
+    # if passed in egoid and traj_idx, use those, otherwise, sample
+    if egoid == nothing || traj_idx == nothing 
+        # sample the ngsim trajectory
+        traj_idx = rand(1:length(trajinfos))
+        # sample the first vehicle and start and end timesteps
+        egoid = rand(collect(keys(trajinfos[traj_idx])))
+    end
+
+    ts = trajinfos[traj_idx][egoid]["ts"]
+    te = trajinfos[traj_idx][egoid]["te"]
+    # this sampling assumes ts:te-offset is a valid range
+    # this is enforced by the initial computation of the index / trajinfo
+    ts = rand(ts:te - offset)
+    # after setting the start timestep randomly from the valid range, next 
+    # update the end timestep to be offset timesteps following it 
+    # this assume that we just want to simulate for offset timesteps
+    te = ts + offset
+
+    # find all other vehicles that have at least 'offset' many steps in common 
+    # with the first sampled egoid starting from ts. If the number of such 
+    # vehicles is fewer than n_veh, then resample
+    # start with the set containing the first egoid so we don't double count it
+    egoids = Set{Int}(egoid)
+    for othid in keys(trajinfos[traj_idx])
+        oth_ts = trajinfos[traj_idx][othid]["ts"]
+        oth_te = trajinfos[traj_idx][othid]["te"]
+        # other vehicle must start at or before ts and must end at or after te
+        if oth_ts <= ts && te <= oth_te
+            push!(egoids, othid)
+        end
+    end
+
+    # check that there are enough valid ids from which to sample
+    if length(egoids) < n_veh
+        # if not, resample
+        # this is not ideal, but dramatically simplifies the multiagent env
+        # if it becomes a problem, implement a version of the multiagent env 
+        # with asynchronous resets
+        if verbose
+            println("WARNING: insuffcient sampling ids in sample_multiple_trajdata_vehicle, resamples remaining: $(max_resamples)")
+        end
+        if max_resamples == 0
+            error("ERROR: reached maximum resamples in sample_multiple_trajdata_vehicle")
+        else
+            return sample_multiple_trajdata_vehicle(
+                n_veh, 
+                trajinfos, 
+                offset, 
+                max_resamples=max_resamples - 1,
+                verbose=verbose)
+        end
+    end
+
+    # reaching this point means there are sufficient ids, sample the ones to use
+    egoids = random_sample_from_set_without_replacement(egoids, n_veh)
+
+    return traj_idx, egoids, ts, te
 end
 
 function build_feature_extractor(params = Dict())

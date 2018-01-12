@@ -9,6 +9,8 @@ function make(env_id::String, env_params::Dict)
             return NGSIMEnv(env_params)
         elseif env_id == "VectorizedNGSIMEnv"
             return VectorizedNGSIMEnv(env_params)
+        elseif env_id == "MultiagentNGSIMEnv"
+            return MultiagentNGSIMEnv(env_params)
         else
             throw(ArgumentError("Invalid env_id: $(env_id)"))
         end
