@@ -133,12 +133,21 @@ def build_ngsim_env(
         terminate_on_collision=False,
         terminate_on_off_road=False,
         render_params=render_params,
-        n_envs=args.n_envs
+        n_envs=args.n_envs,
+        n_veh=args.n_envs
     )
-    if vectorize:
+    # order matters here because multiagent is a subset of vectorized
+    # i.e., if you want to run with multiagent = true, then vectorize must 
+    # also be true
+    if args.env_multiagent:
+        env_id = 'MultiagentNGSIMEnv'
+        alpha = alpha * args.n_envs
+        normalize_wrapper = vectorized_normalized_env
+    elif vectorize:
         env_id = 'VectorizedNGSIMEnv'
         alpha = alpha * args.n_envs
         normalize_wrapper = vectorized_normalized_env
+
     else:
         env_id = 'NGSIMEnv'
         normalize_wrapper = normalize_env
