@@ -1,14 +1,21 @@
 
 # NGSIM Env
 - This is a rllab environment for learning human driver models with imitation learning
-- This repository does not contain a gail / infogail / hgail implementation
+- This repository does not contain a [gail](https://arxiv.org/abs/1606.03476) / [infogail](https://arxiv.org/abs/1703.08840) / hgail implementation
 - It also does not contain the human driver data you need for the environment to work. See [NGSIM.jl](https://github.com/sisl/NGSIM.jl) for that.
 
 ## Demo
-### Hierarchical GAIL (implementation not included) in a single-agent environment
-![alt tag](https://raw.githubusercontent.com/wulfebw/ngsim_env/master/media/ngsim_env_hgail.gif)
+### Hierarchical GAIL in a single-agent environment
+![hgail-single](media/ngsim_env_hgail.gif)
+
+### GAIL in a multi-agent environment
+![gail-multi](media/multiagent_ngsim_env_gail.gif)
 
 # Install
+- see [`docs/install.md`](docs/install.md)
+
+# Training
+- see [`docs/training.md`](docs/training.md)
 
 # Documentation
 

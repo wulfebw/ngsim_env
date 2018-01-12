@@ -5,6 +5,7 @@ ENV["PYTHON"] = ""
 package_names = [
     "JLD",
     "GridInterpolations",
+    "PyCall",
     "PyPlot"
 ]
 for name in package_names
