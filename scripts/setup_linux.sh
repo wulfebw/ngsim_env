@@ -36,12 +36,18 @@ python setup.py develop
 echo "Conda environment created! Make sure to run \`source activate rllab3\` whenever you open a new terminal and want to run programs under rllab."
 cd ..
 source activate rllab3
-pip install pyjulia
+pip install julia
 
 # julia install 
 echo "Installing julia stuff..."
+
+wget https://julialang-s3.julialang.org/bin/linux/x64/0.6/julia-0.6.2-linux-x86_64.tar.gz
+tar -xf julia-0.6.2-linux-x86_64.tar.gz
+rm julia-0.6.2-linux-x86_64.tar.gz
+
 echo "Adding some stuff we'll need later to bashrc..."
 echo "export LD_PRELOAD=${HOME}/.julia/v0.6/Conda/deps/usr/lib/libz.so" >> ~/.bashrc 
+echo "export PATH=$(pwd)/julia-d386e40c17/bin/:$PATH" >> ~/.bashrc
 
 ## automotive packages
 echo "Installing automotive stuff..."
@@ -50,6 +56,10 @@ git clone https://github.com/wulfebw/ngsim_env.git
 julia ngsim_env/julia/deps/build.jl
 echo "Adding AutoEnv to julia path in juliarc.jl"
 echo "push!(LOAD_PATH, \"$(pwd)/ngsim_env/julia/AutoEnvs\")" >> ~/.juliarc.jl
+### automotive python setup
+cd ngsim_env/python
+python setup.py develop
+cd ../..
 
 ### NGSIM
 echo "At this point you need to download NGSIM data"
