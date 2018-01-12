@@ -11,7 +11,7 @@ julia extract_ngsim_demonstrations.jl
 - This script requires the gail implementation provided in the `hgail` python package
 - See `imitation/hyperparams.py` for the training options and default hyperparameters
 - To train a policy in the multiagent environment, run
-```python
+```bash
 python imitate.py --env_multiagent True --use_infogail False --exp_name NGSIM-multiagent --n_itr 1000 --policy_recurrent True
 ```
 - This command
