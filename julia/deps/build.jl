@@ -1,9 +1,23 @@
+# let julia handle python internally
+ENV["PYTHON"] = ""
+
+# add 
+package_names = [
+    "JLD",
+    "GridInterpolations",
+    "PyPlot"
+]
+for name in package_names
+    Pkg.add(name)
+end
+
 # clone
 urls = [
     "https://github.com/sisl/AutomotiveDrivingModels.jl.git",
     "https://github.com/sisl/AutoViz.jl.git",
     "https://github.com/sisl/BayesNets.jl.git",
-    "https://github.com/wulfebw/AutoRisk.jl.git"
+    "https://github.com/sisl/NGSIM.jl.git",
+    "https://github.com/wulfebw/AutoRisk.jl.git",
 ]
 
 packages = keys(Pkg.installed())
