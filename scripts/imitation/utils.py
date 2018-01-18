@@ -122,7 +122,7 @@ def build_ngsim_env(
     filepaths = [os.path.join(basedir, args.ngsim_filename)]
     if render_params is None:
         render_params = dict(
-            viz_dir=os.path.join(exp_dir, 'viz'),
+            viz_dir=os.path.join(exp_dir, 'imitate/viz'),
             zoom=5.
         )
     env_params = dict(
