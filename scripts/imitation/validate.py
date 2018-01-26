@@ -41,6 +41,46 @@ def simulate(env, policy, max_steps, render=False, env_kwargs=dict()):
         x = nx
     return traj.flatten()
 
+def mutliagent_simulate(
+        env, 
+        policy, 
+        max_steps, 
+        render=False, 
+        env_kwargs=dict()):
+    '''
+    Description:
+        - simulates a vectorized agent in a vectorized environment 
+
+    Args:
+        - env: env to simulate in, must be vectorized
+        - policy: policy, must be vectorized
+        - max_steps: max steps in env per episode
+        - render: display visual
+        - env_kwargs: key word arguments to pass to env 
+
+    Returns:
+        - a dictionary object with a bit of an unusual format:
+            each value in the dictionary is an array with shape 
+            (timesteps, n_env / n_veh, shape of attribute)
+            i.e., first dim corresponds to time 
+            second dim to the index of the agent
+            third dim is for the attribute itself
+    '''
+    
+    x = env.reset(**env_kwargs)
+    n_agents = x.shape[0]
+    traj = hgail.misc.simulation.Trajectory()
+    dones = [True] * n_agents
+    policy.reset(dones)
+    for step in range(max_steps):
+        if render: env.render()
+        a, a_info = policy.get_actions(x)
+        nx, r, dones, e_info = env.step(a)
+        traj.add(x, a, r, a_info, e_info)
+        if any(dones): break
+        x = nx
+    return traj.flatten()
+
 def collect_trajectories(
         args,  
         params, 
@@ -74,15 +114,24 @@ def collect_trajectories(
         nids = len(egoids)
         for i, egoid in enumerate(egoids):
             sys.stdout.write('\rpid: {} traj: {} / {}'.format(pid, i, nids))
-            traj = simulate(
-                env, 
-                policy, 
-                max_steps=max_steps,
-                env_kwargs=dict(egoid=egoid, start=starts[egoid])
-            )
-            traj['egoid'] = egoid
-            traj['start'] = starts[egoid]
-            trajlist.append(traj)
+
+            if args.env_multiagent:
+                traj = mutliagent_simulate(
+                    env, 
+                    policy, 
+                    max_steps=max_steps
+                )
+                trajlist.append(traj)
+            else:
+                traj = simulate(
+                    env, 
+                    policy, 
+                    max_steps=max_steps,
+                    env_kwargs=dict(egoid=egoid, start=starts[egoid])
+                )
+                traj['egoid'] = egoid
+                traj['start'] = starts[egoid]
+                trajlist.append(traj)
 
     return trajlist
 
@@ -135,6 +184,40 @@ def parallel_collect_trajectories(
     time.sleep(5)
     return trajlist
 
+def single_process_collect_trajectories(
+        args,
+        params,
+        egoids,
+        starts,
+        n_proc, 
+        env_fn=utils.build_ngsim_env,
+        max_steps=200,
+        use_hgail=False):
+    '''
+    This function for debugging purposes
+    '''
+    # build list to be appended to 
+    trajlist = []
+    
+    # set policy function
+    policy_fn = utils.build_hierarchy if use_hgail else utils.build_policy
+    tf.reset_default_graph()
+
+    # collect trajectories in a single process
+    collect_trajectories(
+        args, 
+        params, 
+        egoids, 
+        starts,
+        trajlist, 
+        1,
+        env_fn,
+        policy_fn,
+        max_steps,
+        use_hgail
+    )
+    return trajlist    
+
 def collect(
         egoids,
         starts,
@@ -143,7 +226,14 @@ def collect(
         use_hgail,
         params_filename,
         n_proc,
-        max_steps=200):
+        max_steps=200,
+        collect_fn=parallel_collect_trajectories):
+    '''
+    Description:
+        - prepare for running collection in parallel
+        - multiagent note: egoids and starts are not currently used when running 
+            this with args.env_multiagent == True 
+    '''
     # load information relevant to the experiment
     params_filepath = os.path.join(exp_dir, 'imitate/log/{}'.format(params_filename))
     params = hgail.misc.utils.load_params(params_filepath)
@@ -155,7 +245,7 @@ def collect(
         args.ngsim_filename.split('.')[0]))
 
     with ContextTimer():
-        trajs = parallel_collect_trajectories(
+        trajs = collect_fn(
             args, 
             params, 
             egoids, 
@@ -216,10 +306,21 @@ if __name__ == '__main__':
     parser.add_argument('--params_filename', type=str, default='itr_2000.npz')
     parser.add_argument('--n_runs_per_ego_id', type=int, default=1)
     parser.add_argument('--use_hgail', type=str2bool, default=False)
+    parser.add_argument('--use_multiagent', type=str2bool, default=False)
+    parser.add_argument('--n_multiagent_trajs', type=int, default=10000)
+    parser.add_argument('--debug', type=str2bool, default=False)
     run_args = parser.parse_args()
 
     args_filepath = os.path.join(run_args.exp_dir, 'imitate/log/args.npz')
     args = hyperparams.load_args(args_filepath)
+    if run_args.use_multiagent:
+        args.env_multiagent = True
+
+    if run_args.debug:
+        collect_fn = single_process_collect_trajectories
+    else:
+        collect_fn = parallel_collect_trajectories
+
     filenames = [
         "trajdata_i80_trajectories-0400-0415.txt",
         "trajdata_i80_trajectories-0500-0515.txt",
@@ -230,7 +331,14 @@ if __name__ == '__main__':
     ]
     for fn in filenames:
         args.ngsim_filename = fn
-        egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
+        if args.env_multiagent:
+            # args.n_envs gives the number of simultaneous vehicles 
+            # so run_args.n_multiagent_trajs / args.n_envs gives the number 
+            # of simulations to run overall
+            egoids = list(range(int(run_args.n_multiagent_trajs / args.n_envs)))
+            starts = dict()
+        else:
+            egoids, starts = load_egoids(fn, args, run_args.n_runs_per_ego_id)
         collect(
             egoids,
             starts,
@@ -238,5 +346,6 @@ if __name__ == '__main__':
             exp_dir=run_args.exp_dir,
             params_filename=run_args.params_filename,
             use_hgail=run_args.use_hgail,
-            n_proc=run_args.n_proc
+            n_proc=run_args.n_proc,
+            collect_fn=collect_fn
         )
