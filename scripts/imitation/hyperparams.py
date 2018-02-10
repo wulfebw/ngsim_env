@@ -26,6 +26,7 @@ def parse_args(arglist=None):
     parser.add_argument('--env_primesteps', type=int, default=50)
     parser.add_argument('--env_action_repeat', type=int, default=1)
     parser.add_argument('--env_multiagent', type=str2bool, default=False)
+    parser.add_argument('--adaptive_normalization', type=str2bool, default=True)
 
     # reward handler
     parser.add_argument('--reward_handler_max_epochs', type=int, default=100)
@@ -61,6 +62,9 @@ def parse_args(arglist=None):
     parser.add_argument('--n_itr', type=int, default=2000)
     parser.add_argument('--max_path_length', type=int, default=1000)
     parser.add_argument('--discount', type=float, default=.95)
+
+    # validator
+    parser.add_argument('--validator_validate_normalization', type=str2bool, default=False)
 
     # parse and return
     if arglist is None:

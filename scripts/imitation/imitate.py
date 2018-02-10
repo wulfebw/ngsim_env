@@ -29,6 +29,8 @@ data = utils.load_data(
     clip_std_multiple=args.normalize_clip_std_multiple,
     ngsim_filename=args.ngsim_filename
 )
+if not args.adaptive_normalization:
+    utils.set_normalizing_env_stats(env, data['obs_mean'], data['obs_std'])
 critic = utils.build_critic(args, data, env, summary_writer)
 policy = utils.build_policy(args, env)
 recognition_model = utils.build_recognition_model(args, env, summary_writer)
@@ -38,7 +40,8 @@ validator = auto_validator.AutoValidator(
     summary_writer, 
     data['obs_mean'], 
     data['obs_std'],
-    flat_recurrent=args.policy_recurrent
+    flat_recurrent=args.policy_recurrent,
+    validate_normalization=args.validator_validate_normalization
 )
 
 # build algo 

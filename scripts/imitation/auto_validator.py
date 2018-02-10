@@ -35,12 +35,14 @@ class AutoValidator(Validator):
             obs_mean, 
             obs_std,
             render_every=25,
-            flat_recurrent=False):
+            flat_recurrent=False,
+            validate_normalization=False):
         super(AutoValidator, self).__init__(writer)
         self.obs_mean = obs_mean
         self.obs_std = obs_std
         self.render_every = render_every
         self.flat_recurrent = flat_recurrent
+        self.validate_normalization = validate_normalization
 
     def _summarize_env_infos(self, env_infos):
         summaries = []
@@ -143,13 +145,14 @@ class AutoValidator(Validator):
                 normalized_env = hgail.misc.utils.extract_wrapped_env(objs['env'], VectorizedNormalizedEnv)
             julia_env = hgail.misc.utils.extract_wrapped_env(objs['env'], JuliaEnv)
 
-            summaries += self._summarize_obs_mean_std(
-                normalized_env._obs_mean, 
-                np.sqrt(normalized_env._obs_var),
-                self.obs_mean,
-                self.obs_std,
-                julia_env.obs_names()
-            )
+            if self.validate_normalization:
+                summaries += self._summarize_obs_mean_std(
+                    normalized_env._obs_mean, 
+                    np.sqrt(normalized_env._obs_var),
+                    self.obs_mean,
+                    self.obs_std,
+                    julia_env.obs_names()
+                )
 
         # render a trajectory, this must save to file on its own
         if 'env' in keys and 'policy' in keys and (itr % self.render_every) == 0:

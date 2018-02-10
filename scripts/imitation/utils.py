@@ -163,6 +163,14 @@ def build_ngsim_env(
     add_kwargs_to_reset(env)
     return env, low, high
 
+def set_normalizing_env_stats(env, obs_mean, obs_std):
+    if obs_mean is not None and obs_std is not None:
+        normalize_env = hgail.misc.utils.extract_normalizing_env(env)
+        if normalize_env is not None:
+            normalize_env._obs_alpha = 0.
+            normalize_env._obs_mean = obs_mean
+            normalize_env._obs_var = obs_std ** 2
+
 def build_critic(args, data, env, writer=None):
     if args.use_critic_replay_memory:
         critic_replay_memory = hgail.misc.utils.KeyValueReplayMemory(maxsize=3 * args.batch_size)
