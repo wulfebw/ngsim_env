@@ -139,18 +139,29 @@ def build_ngsim_env(
     # order matters here because multiagent is a subset of vectorized
     # i.e., if you want to run with multiagent = true, then vectorize must 
     # also be true
+    normalize_kwargs = dict(
+        normalize_obs=True, 
+        obs_alpha=alpha
+    )
+    if not args.adaptive_normalization:
+        # only apply clipping when running without adaptive normalization
+        normalize_kwargs['clip_std_multiple'] = args.normalize_clip_std_multiple
+
     if args.env_multiagent:
         env_id = 'MultiagentNGSIMEnv'
         alpha = alpha * args.n_envs
         normalize_wrapper = vectorized_normalized_env
+        
     elif vectorize:
         env_id = 'VectorizedNGSIMEnv'
         alpha = alpha * args.n_envs
         normalize_wrapper = vectorized_normalized_env
-
     else:
         env_id = 'NGSIMEnv'
         normalize_wrapper = normalize_env
+        if not args.adaptive_normalization:
+            raise NotImplementedError('''non vectorized env not implemented for 
+                use without adaptive normalization''')
 
     env = JuliaEnv(
         env_id=env_id,
@@ -159,7 +170,7 @@ def build_ngsim_env(
     )
     # get low and high values for normalizing _real_ actions
     low, high = env.action_space.low, env.action_space.high
-    env = TfEnv(normalize_wrapper(env, normalize_obs=True, obs_alpha=alpha))
+    env = TfEnv(normalize_wrapper(env, **normalize_kwargs))
     add_kwargs_to_reset(env)
     return env, low, high
 
