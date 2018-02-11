@@ -36,7 +36,7 @@ def parse_args(arglist=None):
     parser.add_argument('--use_infogail', type=str2bool, default=False)
     parser.add_argument('--policy_mean_hidden_layer_dims', nargs='+', default=(128,128,64))
     parser.add_argument('--policy_std_hidden_layer_dims', nargs='+', default=(128,64))
-    parser.add_argument('--policy_recurrent', type=str2bool, default=False)
+    parser.add_argument('--policy_recurrent', type=str2bool, default=True)
     parser.add_argument('--recurrent_hidden_dim', type=int, default=64)
 
     # critic
