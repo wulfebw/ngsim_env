@@ -18,7 +18,7 @@ def parse_args(arglist=None):
     parser.add_argument('--expert_filepath', type=str, default='../../data/trajectories/ngsim.h5')
     parser.add_argument('--vectorize', type=str2bool, default=True)
     parser.add_argument('--n_envs', type=int, default=50)
-    parser.add_argument('--normalize_clip_std_multiple', type=float, default=15.)
+    parser.add_argument('--normalize_clip_std_multiple', type=float, default=10.)
 
     # env
     parser.add_argument('--ngsim_filename', type=str, default='trajdata_i101_trajectories-0750am-0805am.txt')
@@ -44,7 +44,7 @@ def parse_args(arglist=None):
     parser.add_argument('--n_critic_train_epochs', type=int, default=40)
     parser.add_argument('--critic_learning_rate', type=float, default=.0004)
     parser.add_argument('--critic_dropout_keep_prob', type=float, default=.8)
-    parser.add_argument('--gradient_penalty', type=float, default=5.)
+    parser.add_argument('--gradient_penalty', type=float, default=2.)
     parser.add_argument('--critic_grad_rescale', type=float, default=40.)
     parser.add_argument('--critic_batch_size', type=int, default=1000)
     parser.add_argument('--critic_hidden_layer_dims', nargs='+', default=(128,128,64))
