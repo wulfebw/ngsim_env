@@ -19,6 +19,7 @@ def parse_args(arglist=None):
     parser.add_argument('--vectorize', type=str2bool, default=True)
     parser.add_argument('--n_envs', type=int, default=50)
     parser.add_argument('--normalize_clip_std_multiple', type=float, default=10.)
+    parser.add_argument('--render_every', type=int, default=25)
 
     # env
     parser.add_argument('--ngsim_filename', type=str, default='trajdata_i101_trajectories-0750am-0805am.txt')

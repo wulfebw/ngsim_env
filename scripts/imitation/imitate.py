@@ -40,6 +40,7 @@ validator = auto_validator.AutoValidator(
     summary_writer, 
     data['obs_mean'], 
     data['obs_std'],
+    render_every=args.render_every,
     flat_recurrent=args.policy_recurrent,
     validate_normalization=args.validator_validate_normalization
 )

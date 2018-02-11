@@ -51,10 +51,10 @@ def run_commands(cmds, dry_run):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--exp_name', type=str, default='multiagent_curriculum_{}')
-    parser.add_argument('--n_itr_each', type=int, default=100)
-    parser.add_argument('--n_envs_start', type=int, default=5)
+    parser.add_argument('--n_itr_each', type=int, default=200)
+    parser.add_argument('--n_envs_start', type=int, default=10)
     parser.add_argument('--n_envs_end', type=int, default=50)
-    parser.add_argument('--n_envs_step', type=int, default=5)
+    parser.add_argument('--n_envs_step', type=int, default=10)
     parser.add_argument('--dry_run', action='store_true', default=False)
     args = parser.parse_args()
 
