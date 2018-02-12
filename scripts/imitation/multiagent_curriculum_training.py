@@ -19,7 +19,8 @@ def build_commands(
         '--n_itr {} '
         '--policy_recurrent True '
         '--n_envs {} '
-        '--params_filepath {}'
+        '--params_filepath {} '
+        '--validator_render False' # avoid bug where render takes a very long time
     )
     cmds = []
     # explicit empty string for initial run

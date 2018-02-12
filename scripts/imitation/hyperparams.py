@@ -66,6 +66,7 @@ def parse_args(arglist=None):
 
     # validator
     parser.add_argument('--validator_validate_normalization', type=str2bool, default=False)
+    parser.add_argument('--validator_render', type=str2bool, default=True)
 
     # parse and return
     if arglist is None:

@@ -34,12 +34,14 @@ class AutoValidator(Validator):
             writer, 
             obs_mean, 
             obs_std,
+            render=True,
             render_every=25,
             flat_recurrent=False,
             validate_normalization=False):
         super(AutoValidator, self).__init__(writer)
         self.obs_mean = obs_mean
         self.obs_std = obs_std
+        self.render = render
         self.render_every = render_every
         self.flat_recurrent = flat_recurrent
         self.validate_normalization = validate_normalization
@@ -155,7 +157,7 @@ class AutoValidator(Validator):
                 )
 
         # render a trajectory, this must save to file on its own
-        if 'env' in keys and 'policy' in keys and (itr % self.render_every) == 0:
+        if self.render and 'env' in keys and 'policy' in keys and (itr % self.render_every) == 0:
             if objs['env'].vectorized:
                 vectorized_render_rollout(objs['env'], objs['policy'], max_path_length=200)
             else:
