@@ -159,7 +159,11 @@ class AutoValidator(Validator):
         # render a trajectory, this must save to file on its own
         if self.render and 'env' in keys and 'policy' in keys and (itr % self.render_every) == 0:
             if objs['env'].vectorized:
-                vectorized_render_rollout(objs['env'], objs['policy'], max_path_length=200)
+                vectorized_render_rollout(
+                    objs['env'], 
+                    objs['policy'],
+                    max_path_length=200,
+                    deterministic=True)
             else:
                 rollout(objs['env'], objs['policy'], animated=True, max_path_length=200)
 
