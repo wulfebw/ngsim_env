@@ -219,8 +219,12 @@ function sample_multiple_trajdata_vehicle(
         max_resamples::Int = 100,
         egoid::Union{Void, Int} = nothing,
         traj_idx::Union{Void, Int} = nothing,
-        verbose::Bool = true)
-
+        verbose::Bool = true,
+        rseed::Union{Void, Int} = nothing)
+    
+    if rseed != nothing
+        srand(rseed)
+    end
     # if passed in egoid and traj_idx, use those, otherwise, sample
     if egoid == nothing || traj_idx == nothing 
         # sample the ngsim trajectory

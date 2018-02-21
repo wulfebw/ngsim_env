@@ -114,7 +114,8 @@ Args:
 function reset(
         env::MultiagentNGSIMEnv,
         dones::Vector{Bool} = fill!(Vector{Bool}(env.n_veh), true); 
-        offset::Int=env.H + env.primesteps)
+        offset::Int=env.H + env.primesteps,
+        random_seed::Union{Void, Int} = nothing)
     # enforce environment invariant reset property 
     # (i.e., always either all true or all false)
     @assert (all(dones) || all(.!dones))
@@ -128,7 +129,8 @@ function reset(
     env.traj_idx, env.egoids, env.t, env.h = sample_multiple_trajdata_vehicle(
         env.n_veh,
         env.trajinfos, 
-        offset
+        offset,
+        rseed=random_seed
     )  
 
     # update / reset containers
