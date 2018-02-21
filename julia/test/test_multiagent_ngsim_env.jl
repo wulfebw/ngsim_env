@@ -14,7 +14,7 @@ function test_basics()
 
     # reset, step
     x = reset(env)
-    @test size(x) == (2, 64)
+    @test size(x) == (2, 66)
     a = zeros(n_veh, 2)
     nx, r, terminal, infos = step(env, a)
     @test x != nx
@@ -69,13 +69,14 @@ function test_render()
         "trajectory_filepaths"=>[filepath],
         "H"=>50,
         "primesteps"=>50,
-        "n_veh"=>n_veh
+        "n_veh"=>n_veh,
+        "remove_ngsim_veh"=>true
     )
     env = MultiagentNGSIMEnv(params)
 
     reset(env)
     a = ones(n_veh, 2)
-    for _ in 1:100
+    for _ in 1:50
         render(env)
         x, r, terminal, _ = step(env, a)
     end

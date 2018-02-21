@@ -6,7 +6,8 @@ export
     build_feature_extractor,
     max_n_objects,
     fill_infos_cache,
-    stack_tensor_dict_list
+    stack_tensor_dict_list,
+    keep_vehicle_subset!
 
 #=
 Description:
@@ -322,6 +323,16 @@ function fill_infos_cache(ext::MultiFeatureExtractor)
         end
     end
     return cache
+end
+
+function keep_vehicle_subset!(scene::Scene, ids::Vector{Int})
+    keep_ids = Set(ids)
+    scene_ids = Set([veh.id for veh in scene])
+    remove_ids = setdiff(scene_ids, keep_ids)
+    for id in remove_ids
+        delete!(scene, id)
+    end
+    return scene
 end
 
 function stack_tensor_dict_list(lst::Vector{Dict})

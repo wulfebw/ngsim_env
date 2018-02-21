@@ -31,6 +31,7 @@ type MultiagentNGSIMEnv <: Env
 
     # multiagent type members
     n_veh::Int # number of simultaneous agents
+    remove_ngsim_veh::Bool # whether to remove ngsim veh from all scenes
     features::Array{Float64}
 
     # metadata
@@ -47,6 +48,7 @@ type MultiagentNGSIMEnv <: Env
             primesteps::Int = 50,
             H::Int = 50,
             n_veh::Int = 20,
+            remove_ngsim_veh::Bool = false,
             render_params::Dict = Dict("zoom"=>5., "viz_dir"=>"/tmp"))
         param_keys = keys(params)
         @assert in("trajectory_filepaths", param_keys)
@@ -56,6 +58,7 @@ type MultiagentNGSIMEnv <: Env
         primesteps = get(params, "primesteps", primesteps)
         H = get(params, "H", H)
         n_veh = get(params, "n_veh", n_veh)
+        remove_ngsim_veh = get(params, "remove_ngsim_veh", remove_ngsim_veh)
         for (k,v) in get(params, "render_params", render_params)
             render_params[k] = v
         end
@@ -89,7 +92,7 @@ type MultiagentNGSIMEnv <: Env
             rec, 
             ext, 
             egoids, ego_vehs, 0, 0, 0, H, primesteps, Δt, 
-            n_veh, features,
+            n_veh, remove_ngsim_veh, features,
             0, render_params, infos_cache
         )
     end
@@ -140,7 +143,11 @@ function reset(
     
     # prime 
     for t in env.t:(env.t + env.primesteps)
-        update!(env.rec, get!(env.scene, env.trajdatas[env.traj_idx], t))
+        get!(env.scene, env.trajdatas[env.traj_idx], t)
+        if env.remove_ngsim_veh
+            keep_vehicle_subset!(env.scene, env.egoids)
+        end
+        update!(env.rec, env.scene)
     end
 
     # set the ego vehicle
@@ -187,6 +194,9 @@ function _step!(env::MultiagentNGSIMEnv, action::Array{Float64})
 
     # load the actual scene, and insert the vehicles into it
     get!(env.scene, env.trajdatas[env.traj_idx], env.t)
+    if env.remove_ngsim_veh
+        keep_vehicle_subset!(env.scene, env.egoids)
+    end
     orig_vehs = Vector{Vehicle}(env.n_veh)
     for (i, egoid) in enumerate(env.egoids)
         vehidx = findfirst(env.scene, egoid)
